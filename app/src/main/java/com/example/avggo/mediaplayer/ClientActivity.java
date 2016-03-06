@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
@@ -95,7 +94,6 @@ public class ClientActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... arg0) {
 
-            Socket socket = null;
             DatagramSocket clientSocket = null;
             try {
                 clientSocket = new DatagramSocket();
