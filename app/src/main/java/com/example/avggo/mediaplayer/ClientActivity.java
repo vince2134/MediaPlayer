@@ -38,7 +38,9 @@ public class ClientActivity extends AppCompatActivity {
         playBtn = (Button) findViewById(R.id.playBtn);
         nextBtn = (Button) findViewById(R.id.nextBtn);
 
-        buttonConnect.setOnClickListener(buttonConnectOnClickListener);
+        //clientTask = new ClientTask(editTextAddress.getText().toString(), Integer.parseInt(editTextPort.getText().toString()));
+
+        //buttonConnect.setOnClickListener(buttonConnectOnClickListener);
 
         buttonClear.setOnClickListener(new View.OnClickListener(){
 
@@ -50,32 +52,30 @@ public class ClientActivity extends AppCompatActivity {
         prevBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MyClientTask myClientTask = new MyClientTask(editTextAddress.getText().toString(), Integer.parseInt(editTextPort.getText().toString()), "previous");
-                myClientTask.execute();
+                ClientTask clientTask = new ClientTask(editTextAddress.getText().toString(), Integer.parseInt(editTextPort.getText().toString()), ServerActivity.PREVIOUS);
+                clientTask.execute();
+                setTextResponse(ServerActivity.PREVIOUS);
             }
         });
 
         nextBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MyClientTask myClientTask = new MyClientTask(editTextAddress.getText().toString(), Integer.parseInt(editTextPort.getText().toString()), "next");
-                myClientTask.execute();
+                ClientTask clientTask = new ClientTask(editTextAddress.getText().toString(), Integer.parseInt(editTextPort.getText().toString()), ServerActivity.NEXT);
+                clientTask.execute();
+                setTextResponse(ServerActivity.NEXT);
             }
         });
-    }
 
-    View.OnClickListener buttonConnectOnClickListener =
-            new View.OnClickListener(){
-
-                @Override
-                public void onClick(View arg0) {
-                    if(editTextAddress.getText().toString().length() != 0 && editTextPort.getText().toString().length() != 0) {
-                        MyClientTask myClientTask = new MyClientTask(editTextAddress.getText().toString(), Integer.parseInt(editTextPort.getText().toString()), "connect");
-                        myClientTask.execute();
-                    }
-                    else
-                        Toast.makeText(getBaseContext(), "Please fill in all fields.", Toast.LENGTH_SHORT).show();
+        buttonConnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(editTextAddress.getText().toString().length() != 0 && editTextPort.getText().toString().length() != 0) {
+                    ClientTask clientTask = new ClientTask(editTextAddress.getText().toString(), Integer.parseInt(editTextPort.getText().toString()), ServerActivity.CONNECT);
+                    clientTask.execute();
+                    setTextResponse(ServerActivity.CONNECT);
                 }
+<<<<<<< HEAD
             };
 
     public class MyClientTask extends AsyncTask<Void, Void, Void> {
@@ -113,14 +113,15 @@ public class ClientActivity extends AppCompatActivity {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+=======
+                else
+                    Toast.makeText(getBaseContext(), "Please fill in all fields.", Toast.LENGTH_SHORT).show();
+>>>>>>> 4812611af12f20ddbb8c4240d89d281199cc018d
             }
-            return null;
-        }
+        });
+    }
 
-        @Override
-        protected void onPostExecute(Void result) {
-            textResponse.setText(response);
-            super.onPostExecute(result);
-        }
+    private void setTextResponse(String command) {
+        textResponse.setText("Initiated " + command + " command to the server.");
     }
 }
