@@ -27,6 +27,7 @@ public class ServerActivity extends AppCompatActivity {
     public static final String NEXT = "next";
     public static final String PREVIOUS = "previous";
     public static final String PLAY = "play";
+    public static int IMAGE_COUNT = 10;
     ImageView image;
 
     @Override
@@ -64,7 +65,7 @@ public class ServerActivity extends AppCompatActivity {
             try {
                 serverSocket = new DatagramSocket(SocketServerPORT);
                 byte[] receiveData = new byte[1024];
-                byte[] sendData = new byte[10240];
+                byte[] sendData;
 
                 ServerActivity.this.runOnUiThread(new Runnable() {
 
@@ -89,21 +90,23 @@ public class ServerActivity extends AppCompatActivity {
                             }
                         });
                     }
-                    else if(command.toLowerCase().contains(PREVIOUS) && pic_index > 1) {
+                    else if(command.toLowerCase().contains(PREVIOUS)) {
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                pic_index--;
+                                //pic_index--;
+                                pic_index = (pic_index - 1) % IMAGE_COUNT;
                                 int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
                                 image.setImageResource(resource);
                             }
                         });
                     }
-                    else if(command.toLowerCase().contains(NEXT) && pic_index < 10) {
+                    else if(command.toLowerCase().contains(NEXT)) {
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                pic_index++;
+                                //pic_index++;
+                                pic_index = (pic_index + 1) % IMAGE_COUNT;
                                 int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
                                 image.setImageResource(resource);
                             }
