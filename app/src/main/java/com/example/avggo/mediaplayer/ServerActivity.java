@@ -21,9 +21,12 @@ public class ServerActivity extends AppCompatActivity {
     TextView info, infoip, msg;
     EditText portNumber;
     Button createServer;
-    String message = "";
     DatagramSocket serverSocket;
     static int SocketServerPORT;
+    public static final String CONNECT = "connect";
+    public static final String NEXT = "next";
+    public static final String PREVIOUS = "previous";
+    public static final String PLAY = "play";
     ImageView image;
 
     @Override
@@ -54,6 +57,7 @@ public class ServerActivity extends AppCompatActivity {
     }
 
     private class SocketServerThread extends Thread {
+        private int pic_index = 1;
 
         @Override
         public void run() {
@@ -76,11 +80,32 @@ public class ServerActivity extends AppCompatActivity {
                     serverSocket.receive(receivePacket);
                     String command = new String(receivePacket.getData());
 
-                    if(command.toLowerCase().contains("connect")) {
+                    if(command.toLowerCase().contains(CONNECT)) {
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                image.setImageResource(R.drawable.test);
+                                int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
+                                image.setImageResource(resource);
+                            }
+                        });
+                    }
+                    else if(command.toLowerCase().contains(PREVIOUS) && pic_index > 1) {
+                        ServerActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                pic_index--;
+                                int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
+                                image.setImageResource(resource);
+                            }
+                        });
+                    }
+                    else if(command.toLowerCase().contains(NEXT) && pic_index < 10) {
+                        ServerActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                pic_index++;
+                                int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
+                                image.setImageResource(resource);
                             }
                         });
                     }
@@ -99,53 +124,6 @@ public class ServerActivity extends AppCompatActivity {
             }
         }
     }
-
-    /*private class SocketServerReplyThread extends Thread {
-
-        private Socket hostThreadSocket;
-        int cnt;
-
-        SocketServerReplyThread(Socket socket, int c) {
-            hostThreadSocket = socket;
-            cnt = c;
-        }
-
-        @Override
-        public void run() {
-            OutputStream outputStream;
-            String msgReply = "Hello from Android, you are #" + cnt;
-
-            try {
-                outputStream = hostThreadSocket.getOutputStream();
-                PrintStream printStream = new PrintStream(outputStream);
-                printStream.print(outputStream);
-                printStream.close();
-
-                message += "replayed: " + msgReply + "\n";
-
-                ServerActivity.this.runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        msg.setText(message);
-                    }
-                });
-
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                message += "Something wrong! " + e.toString() + "\n";
-            }
-
-            ServerActivity.this.runOnUiThread(new Runnable() {
-
-                @Override
-                public void run() {
-                    msg.setText(message);
-                }
-            });
-        }
-    }*/
 
     private String getIpAddress() {
         String ip = "";

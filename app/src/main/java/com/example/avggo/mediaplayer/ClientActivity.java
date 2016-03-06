@@ -22,7 +22,7 @@ public class ClientActivity extends AppCompatActivity {
 
     TextView textResponse;
     EditText editTextAddress, editTextPort;
-    Button buttonConnect, buttonClear;
+    Button buttonConnect, buttonClear, nextBtn, prevBtn, playBtn;
     ImageView image;
 
     @Override
@@ -35,7 +35,10 @@ public class ClientActivity extends AppCompatActivity {
         buttonConnect = (Button)findViewById(R.id.connect);
         buttonClear = (Button)findViewById(R.id.clear);
         textResponse = (TextView)findViewById(R.id.response);
-       // image = (ImageView) findViewById(R.id.imageView);
+        prevBtn = (Button) findViewById(R.id.prevBtn);
+        playBtn = (Button) findViewById(R.id.playBtn);
+        nextBtn = (Button) findViewById(R.id.nextBtn);
+
         buttonConnect.setOnClickListener(buttonConnectOnClickListener);
 
         buttonClear.setOnClickListener(new View.OnClickListener(){
@@ -44,6 +47,22 @@ public class ClientActivity extends AppCompatActivity {
             public void onClick(View v) {
                 textResponse.setText("");
             }});
+
+        prevBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MyClientTask myClientTask = new MyClientTask(editTextAddress.getText().toString(), Integer.parseInt(editTextPort.getText().toString()), "previous");
+                myClientTask.execute();
+            }
+        });
+
+        nextBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MyClientTask myClientTask = new MyClientTask(editTextAddress.getText().toString(), Integer.parseInt(editTextPort.getText().toString()), "next");
+                myClientTask.execute();
+            }
+        });
     }
 
     View.OnClickListener buttonConnectOnClickListener =
@@ -97,47 +116,6 @@ public class ClientActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            /*try {
-                socket = new Socket(dstAddress, dstPort);
-
-                ByteArrayOutputStream byteArrayOutputStream =
-                        new ByteArrayOutputStream(1024);
-                byte[] buffer = new byte[1024];
-
-
-                sendData = command.getBytes();
-                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(dstAddress), dstPort);
-                clientSocket.send(sendPacket);
-                int bytesRead;
-                InputStream inputStream = socket.getInputStream();
-    /*
-     * notice:
-     * inputStream.read() will block if no data return
-     *
-                while ((bytesRead = inputStream.read(buffer)) != -1){
-                    byteArrayOutputStream.write(buffer, 0, bytesRead);
-                    response += byteArrayOutputStream.toString("UTF-8");
-                }
-
-            } catch (UnknownHostException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                response = "UnknownHostException: " + e.toString();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                response = "IOException: " + e.toString();
-            }finally{
-                if(socket != null){
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-            }*/
             return null;
         }
 
