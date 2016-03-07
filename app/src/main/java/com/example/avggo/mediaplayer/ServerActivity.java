@@ -23,10 +23,18 @@ public class ServerActivity extends AppCompatActivity {
     Button createServer;
     DatagramSocket serverSocket;
     static int SocketServerPORT;
-    public static final String CONNECT = "connect";
-    public static final String NEXT = "next";
-    public static final String PREVIOUS = "previous";
-    public static final String PLAY = "play";
+
+    //Hash Keys
+    public static final String KEY_ADDRESS = "IP_Address";
+    public static final String KEY_PORT = "Port_Number";
+
+    //Commands
+    public static final String CONNECT = "Connect\n";
+    public static final String NEXT = "Next\n";
+    public static final String PREVIOUS = "Previous\n";
+    public static final String PLAY = "Play\n";
+
+
     public static int IMAGE_COUNT = 10;
     ImageView image;
 
@@ -79,29 +87,30 @@ public class ServerActivity extends AppCompatActivity {
                 while (true) {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                     serverSocket.receive(receivePacket);
-                    String command = new String(receivePacket.getData());
+                    String command = StringReader.cutString(new String(receivePacket.getData()));
+                    if(command.equalsIgnoreCase(StringReader.cutString(CONNECT))) {
+                        ServerActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
+                                image.setImageResource(resource);
+                            }
+                        });
+                    }
+                    else if(command.equalsIgnoreCase(StringReader.cutString(PREVIOUS))) {
+                        ServerActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                pic_index--;
+                                if (pic_index <= 0)
+                                    pic_index = IMAGE_COUNT;
 
-                    if(command.toLowerCase().contains(CONNECT)) {
-                        ServerActivity.this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
                                 int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
                                 image.setImageResource(resource);
                             }
                         });
                     }
-                    else if(command.toLowerCase().contains(PREVIOUS)) {
-                        ServerActivity.this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                //pic_index--;
-                                pic_index = (pic_index - 1) % IMAGE_COUNT;
-                                int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
-                                image.setImageResource(resource);
-                            }
-                        });
-                    }
-                    else if(command.toLowerCase().contains(NEXT)) {
+                    else if(command.equalsIgnoreCase(StringReader.cutString(NEXT))) {
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -115,9 +124,8 @@ public class ServerActivity extends AppCompatActivity {
                     
                     InetAddress IPAddress = receivePacket.getAddress();
                     int port = receivePacket.getPort();
-                    System.out.println(command);
-                    String capitalizedSentence = command.toUpperCase();
-                    sendData = capitalizedSentence.getBytes();
+                    String response = "test" + pic_index + ".jpg";
+                    sendData = response.getBytes();
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                     serverSocket.send(sendPacket);
                 }

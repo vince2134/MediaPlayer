@@ -9,7 +9,7 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
     tools:context=".ClientActivity" >
-
+    <!--
     <EditText
         android:id="@+id/address"
         android:layout_width="match_parent"
@@ -22,14 +22,14 @@
         android:inputType="number"
         android:hint="Port Number"
         android:layout_below="@+id/address"
-        android:layout_toEndOf="@+id/response"
+        android:layout_toRightOf="@+id/response"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
     <Button
         android:id="@+id/connect"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Connect..."
+        android:text="Connect"
         android:layout_below="@+id/port" />
     <Button
         android:id="@+id/clear"
@@ -69,6 +69,42 @@
         android:text="Next"
         android:id="@+id/nextBtn"
         android:layout_alignTop="@+id/playBtn"
+        android:layout_toRightOf="@+id/playBtn"
+        android:layout_toEndOf="@+id/playBtn" />
+    -->
+    <TextView
+        android:id="@+id/fileNameText"
+        android:text="Filename"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_below="@+id/nextBtn"
+        android:layout_centerHorizontal="true"
+        android:textSize="15dp" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Play"
+        android:id="@+id/playBtn"
+        android:layout_above="@+id/fileNameText"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Previous"
+        android:id="@+id/prevBtn"
+        android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@+id/playBtn"
+        android:layout_toStartOf="@+id/playBtn" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Next"
+        android:id="@+id/nextBtn"
+        android:layout_alignParentTop="true"
         android:layout_toRightOf="@+id/playBtn"
         android:layout_toEndOf="@+id/playBtn" />
 
