@@ -35,7 +35,8 @@ public class ServerActivity extends AppCompatActivity {
     public static final String PLAY = "Play\n";
 
 
-    public static int IMAGE_COUNT = 10;
+    public static int IMAGE_COUNT = 11;
+    public static final String FILENAME = "img";
     ImageView image;
 
     @Override
@@ -66,7 +67,7 @@ public class ServerActivity extends AppCompatActivity {
     }
 
     private class SocketServerThread extends Thread {
-        private int pic_index = 1;
+        private int pic_index = 0;
 
         @Override
         public void run() {
@@ -92,7 +93,7 @@ public class ServerActivity extends AppCompatActivity {
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
+                                int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
                                 image.setImageResource(resource);
                             }
                         });
@@ -102,10 +103,10 @@ public class ServerActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 pic_index--;
-                                if (pic_index <= 0)
-                                    pic_index = IMAGE_COUNT;
+                                if (pic_index < 0)
+                                    pic_index = IMAGE_COUNT - 1;
 
-                                int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
+                                int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
                                 image.setImageResource(resource);
                             }
                         });
@@ -116,7 +117,7 @@ public class ServerActivity extends AppCompatActivity {
                             public void run() {
                                 //pic_index++;
                                 pic_index = (pic_index + 1) % IMAGE_COUNT;
-                                int resource = getResources().getIdentifier("test" + pic_index, "drawable", getPackageName());
+                                int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
                                 image.setImageResource(resource);
                             }
                         });
@@ -124,7 +125,7 @@ public class ServerActivity extends AppCompatActivity {
                     
                     InetAddress IPAddress = receivePacket.getAddress();
                     int port = receivePacket.getPort();
-                    String response = "test" + pic_index + ".jpg";
+                    String response = FILENAME + pic_index + ".jpg";
                     sendData = response.getBytes();
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                     serverSocket.send(sendPacket);
