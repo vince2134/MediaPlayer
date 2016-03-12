@@ -100,8 +100,12 @@ public class ClientActivity extends AppCompatActivity {
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 clientSocket.receive(receivePacket);
                 response = StringReader.cutString(new String(receivePacket.getData()));
-
-
+                ClientActivity.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setFileName(response);
+                    }
+                });
             } catch (SocketException e) {
                 e.printStackTrace();
             } catch (UnknownHostException e) {
@@ -115,7 +119,6 @@ public class ClientActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
-            setFileName(response);
         }
     }
 }

@@ -1,5 +1,9 @@
 package com.example.avggo.mediaplayer;
 
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -10,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -35,7 +40,7 @@ public class ServerActivity extends AppCompatActivity {
     public static final String PLAY = "Play\n";
 
 
-    public static int IMAGE_COUNT = 11;
+    public static int IMAGE_COUNT;
     public static final String FILENAME = "img";
     ImageView image;
 
@@ -67,7 +72,8 @@ public class ServerActivity extends AppCompatActivity {
     }
 
     private class SocketServerThread extends Thread {
-        private int pic_index = 0;
+        private int pic_index = 1;
+        private String[] fileList;
 
         @Override
         public void run() {
@@ -75,6 +81,9 @@ public class ServerActivity extends AppCompatActivity {
                 serverSocket = new DatagramSocket(SocketServerPORT);
                 byte[] receiveData = new byte[1024];
                 byte[] sendData;
+                final AssetManager assetManager = getAssets();
+                fileList = assetManager.list("");
+                IMAGE_COUNT = fileList.length - 3;
 
                 ServerActivity.this.runOnUiThread(new Runnable() {
 
@@ -93,8 +102,17 @@ public class ServerActivity extends AppCompatActivity {
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
-                                image.setImageResource(resource);
+                                /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
+                                image.setImageResource(resource);*/
+                                try {
+                                    InputStream in = assetManager.open(fileList[pic_index]);
+                                    Drawable d = Drawable.createFromStream(in, null);
+                                    Bitmap b = ((BitmapDrawable)d).getBitmap();
+                                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
+                                    image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         });
                     }
@@ -103,11 +121,20 @@ public class ServerActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 pic_index--;
-                                if (pic_index < 0)
-                                    pic_index = IMAGE_COUNT - 1;
+                                if (pic_index < 1)
+                                    pic_index = fileList.length - 4;
 
-                                int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
-                                image.setImageResource(resource);
+                                /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
+                                image.setImageResource(resource);*/
+                                try {
+                                    InputStream in = assetManager.open(fileList[pic_index]);
+                                    Drawable d = Drawable.createFromStream(in, null);
+                                    Bitmap b = ((BitmapDrawable)d).getBitmap();
+                                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
+                                    image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         });
                     }
@@ -115,17 +142,27 @@ public class ServerActivity extends AppCompatActivity {
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                //pic_index++;
-                                pic_index = (pic_index + 1) % IMAGE_COUNT;
-                                int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
-                                image.setImageResource(resource);
+                                pic_index++;
+                                if(pic_index == fileList.length - 4)
+                                    pic_index = 1;
+                                /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
+                                image.setImageResource(resource);*/
+                                try {
+                                    InputStream in = assetManager.open(fileList[pic_index]);
+                                    Drawable d = Drawable.createFromStream(in, null);
+                                    Bitmap b = ((BitmapDrawable)d).getBitmap();
+                                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
+                                    image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         });
                     }
                     
                     InetAddress IPAddress = receivePacket.getAddress();
                     int port = receivePacket.getPort();
-                    String response = FILENAME + pic_index + ".jpg";
+                    String response = fileList[pic_index];
                     sendData = response.getBytes();
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                     serverSocket.send(sendPacket);
