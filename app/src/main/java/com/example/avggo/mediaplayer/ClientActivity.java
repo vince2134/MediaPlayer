@@ -1,5 +1,6 @@
 package com.example.avggo.mediaplayer;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -19,7 +20,7 @@ import java.net.UnknownHostException;
 public class ClientActivity extends AppCompatActivity {
 
     TextView fileName;
-    Button nextBtn, prevBtn, playBtn;
+    Button nextBtn, prevBtn, playBtn, uploadBtn;
     ImageView image;
 
     String ipAddress;
@@ -48,6 +49,7 @@ public class ClientActivity extends AppCompatActivity {
         prevBtn = (Button) findViewById(R.id.prevBtn);
         playBtn = (Button) findViewById(R.id.playBtn);
         nextBtn = (Button) findViewById(R.id.nextBtn);
+        uploadBtn = (Button) findViewById(R.id.uploadBtn);
 
         prevBtn.setOnClickListener(new View.OnClickListener() {
 
@@ -65,6 +67,31 @@ public class ClientActivity extends AppCompatActivity {
                 clientTask.execute();
             }
         });
+
+        uploadBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showFileChooser();
+            }
+        });
+    }
+
+    private static final int FILE_SELECT_CODE = 0;
+
+    private void showFileChooser() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        try {
+            startActivityForResult(
+                    Intent.createChooser(intent, "Select a File to Upload"),
+                    FILE_SELECT_CODE);
+        } catch (android.content.ActivityNotFoundException ex) {
+            // Potentially direct the user to the Market with a Dialog
+            Toast.makeText(this, "Please install a File Manager.",
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void setFileName(String fileName) {
