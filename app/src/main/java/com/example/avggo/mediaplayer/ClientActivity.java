@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,6 +21,7 @@ import java.net.UnknownHostException;
 public class ClientActivity extends AppCompatActivity {
 
     TextView fileName;
+    EditText slideShowLength;
     Button nextBtn, prevBtn, playBtn, uploadBtn;
     ImageView image;
 
@@ -45,6 +47,7 @@ public class ClientActivity extends AppCompatActivity {
         portNumber = getIntent().getIntExtra(ServerActivity.KEY_PORT, 0);
 
         fileName = (TextView) findViewById(R.id.fileNameText);
+        slideShowLength = (EditText) findViewById(R.id.slideShowPauseEditText);
 
         prevBtn = (Button) findViewById(R.id.prevBtn);
         playBtn = (Button) findViewById(R.id.playBtn);
@@ -92,6 +95,25 @@ public class ClientActivity extends AppCompatActivity {
             Toast.makeText(this, "Please install a File Manager.",
                     Toast.LENGTH_SHORT).show();
         }
+
+        playBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int secs;
+                try {
+                    secs = Integer.parseInt(slideShowLength.getText().toString());
+                } catch(NumberFormatException e) {
+                    secs = 0;
+                }
+                if (secs > 0) {
+                    ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.SLIDESHOW + "_" + secs + "_");
+                    clientTask.execute();
+                }
+                else {
+                    Toast.makeText(getBaseContext(), "Input valid pause length!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     private void setFileName(String fileName) {
@@ -126,7 +148,7 @@ public class ClientActivity extends AppCompatActivity {
                 clientSocket.send(sendPacket);
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 clientSocket.receive(receivePacket);
-                response = StringReader.cutString(new String(receivePacket.getData()));
+                response = new String(receivePacket.getData());
                 ClientActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
