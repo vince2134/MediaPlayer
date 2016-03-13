@@ -77,6 +77,9 @@ public class ClientActivity extends AppCompatActivity {
                 Intent intent = new Intent();
 
                 intent.setClass(getBaseContext(), ClientUploadActivity.class);
+                intent.putExtra(ServerActivity.KEY_ADDRESS, ipAddress);
+                intent.putExtra(ServerActivity.KEY_PORT, portNumber);
+
                 startActivity(intent);
             }
         });

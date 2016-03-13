@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
@@ -22,12 +23,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.URISyntaxException;
 
 public class ClientUploadActivity extends AppCompatActivity {
 
     TextView filePath;
     Button chooseFileBtn, uploadBtn;
+
+    String ipAddress;
+    int portNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +44,9 @@ public class ClientUploadActivity extends AppCompatActivity {
     }
 
     private void initHandlers() {
+        ipAddress = getIntent().getStringExtra(ServerActivity.KEY_ADDRESS);
+        portNumber = getIntent().getIntExtra(ServerActivity.KEY_PORT, 0);
+
         filePath = (TextView) findViewById(R.id.filePathText);
         chooseFileBtn = (Button) findViewById(R.id.chooseFileBtn);
         uploadBtn = (Button) findViewById(R.id.uploadBtn2);
@@ -45,6 +55,13 @@ public class ClientUploadActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 showFileChooser();
+            }
+        });
+
+        uploadBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                UploadTask uploadTask = new UploadTask(ipAddress, portNumber, filePath.getText().toString());
             }
         });
     }
@@ -75,7 +92,7 @@ public class ClientUploadActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
                     // Get the Uri of the selected file
                     Uri uri = data.getData();
-                    Log.d(TAG, "File Uri: " + uri.getPath());
+                    Log.d(TAG, "File Uri: " + uri.toString());
                     // Get the path
                     String path = getPath(this, uri);
                     Log.d(TAG, "File Path: " + path);
@@ -195,7 +212,6 @@ public class ClientUploadActivity extends AppCompatActivity {
         return null;
     }
 
-
     /**
      * @param uri The Uri to check.
      * @return Whether the Uri authority is ExternalStorageProvider.
@@ -218,5 +234,36 @@ public class ClientUploadActivity extends AppCompatActivity {
      */
     public static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
+    class UploadTask extends AsyncTask<Void, Void, Void>{
+        private String dstAddress;
+        private int dstPort;
+        private String fPath;
+
+        public UploadTask (String ipAddr, int port, String fPath) {
+            dstAddress = ipAddr;
+            dstPort = port;
+            this.fPath = fPath;
+        }
+
+        protected Void doInBackground (Void... arg0) {
+            DatagramSocket clientSocket;
+            try {
+                clientSocket = new DatagramSocket();
+
+                InetAddress IPAddress = InetAddress.getByName(dstAddress);
+                File myFile = new File (fPath);
+                byte [] data  = new byte[(int)myFile.length()];
+                DatagramPacket sendPacket = new DatagramPacket(data, data.length, IPAddress, dstPort);
+                clientSocket.send(sendPacket);
+                clientSocket.close();
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+            return null;
+        }
     }
 }
