@@ -19,7 +19,7 @@
         </activity>
         <activity android:name=".ServerActivity" />
         <activity android:name=".ClientActivity" />
-        <activity android:name=".ClientConnect"></activity>
+        <activity android:name=".ClientConnectActivity"></activity>
     </application>
 
 </manifest>

@@ -8,7 +8,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-public class ClientConnect extends AppCompatActivity {
+public class ClientConnectActivity extends AppCompatActivity {
 
     EditText editTextAddress, editTextPort;
     Button buttonConnect;
