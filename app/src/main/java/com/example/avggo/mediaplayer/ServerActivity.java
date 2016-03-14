@@ -160,7 +160,7 @@ public class ServerActivity extends AppCompatActivity {
                     }
                     else if(command.contains(NEXT)) {
 
-                        ServerActivity.this.runOnUiThread(new Runnable() {
+                        /*ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 /*pic_index++;
@@ -176,10 +176,10 @@ public class ServerActivity extends AppCompatActivity {
                                     image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
                                 } catch (IOException e) {
                                     e.printStackTrace();
-                                }*/
-                                nextImage();
+                                }
                             }
-                        });
+                        })*/
+                        nextImage();
                     }
                     else if(command.contains(SLIDESHOW)) {
                         String secsString = new String(command.split("_")[1]);
@@ -224,19 +224,24 @@ public class ServerActivity extends AppCompatActivity {
         }
 
         public void nextImage() {
-            pic_index++;
-            if(pic_index == fileList.length - 4)
-                pic_index = 1;
+            ServerActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    pic_index++;
+                    if(pic_index == fileList.length - 4)
+                        pic_index = 1;
 
-            try {
-                InputStream in = assetManager.open(fileList[pic_index]);
-                Drawable d = Drawable.createFromStream(in, null);
-                Bitmap b = ((BitmapDrawable)d).getBitmap();
-                Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
-                image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                    try {
+                        InputStream in = assetManager.open(fileList[pic_index]);
+                        Drawable d = Drawable.createFromStream(in, null);
+                        Bitmap b = ((BitmapDrawable)d).getBitmap();
+                        Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
+                        image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
         }
     }
 
