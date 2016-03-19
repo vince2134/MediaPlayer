@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -204,14 +203,20 @@ public class ServerActivity extends AppCompatActivity {
         }
 
         public void startSlideShow(int secs) {
+            final int seconds = secs;
             /*slideShowStarted = true;
             handler.postDelayed(nextImageRunnable, secs);*/
-            if (timer != null) {
-                return;
-            }
+            ServerActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (timer != null) {
+                        return;
+                    }
 
-            timer = new Timer();
-            timer.scheduleAtFixedRate(timerTask, 0, secs);
+                    timer = new Timer();
+                    timer.scheduleAtFixedRate(timerTask, 0, seconds);
+                }
+            });
         }
 
         public void stopSlideShow() {
