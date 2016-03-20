@@ -117,6 +117,13 @@ public class ServerActivity extends AppCompatActivity {
                     serverSocket.receive(receivePacket);
                     String command = new String(receivePacket.getData());
                     if(command.contains(CONNECT)) {
+                        InetAddress IPAddress = receivePacket.getAddress();
+                        int port = receivePacket.getPort();
+                        String response = fileList[pic_index] + "";
+                        sendData = response.getBytes();
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                        serverSocket.send(sendPacket);
+
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -125,7 +132,7 @@ public class ServerActivity extends AppCompatActivity {
                                 try {
                                     InputStream in = assetManager.open(fileList[pic_index]);
                                     Drawable d = Drawable.createFromStream(in, null);
-                                    Bitmap b = ((BitmapDrawable)d).getBitmap();
+                                    Bitmap b = ((BitmapDrawable) d).getBitmap();
                                     Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
                                     image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
                                 } catch (IOException e) {
@@ -133,35 +140,11 @@ public class ServerActivity extends AppCompatActivity {
                                 }
                             }
                         });
-
-                        InetAddress IPAddress = receivePacket.getAddress();
-                        int port = receivePacket.getPort();
-                        String response = fileList[pic_index] + "";
-                        sendData = response.getBytes();
-                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-                        serverSocket.send(sendPacket);
                     }
                     else if(command.contains(PREVIOUS)) {
-                        ServerActivity.this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                pic_index--;
-                                if (pic_index < 1)
-                                    pic_index = fileList.length - 3;
-
-                                /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
-                                image.setImageResource(resource);*/
-                                try {
-                                    InputStream in = assetManager.open(fileList[pic_index]);
-                                    Drawable d = Drawable.createFromStream(in, null);
-                                    Bitmap b = ((BitmapDrawable)d).getBitmap();
-                                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
-                                    image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
+                        pic_index--;
+                        if (pic_index < 1)
+                            pic_index = fileList.length - 4;
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
@@ -169,6 +152,23 @@ public class ServerActivity extends AppCompatActivity {
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
+
+                        ServerActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
+                                image.setImageResource(resource);*/
+                                try {
+                                    InputStream in = assetManager.open(fileList[pic_index]);
+                                    Drawable d = Drawable.createFromStream(in, null);
+                                    Bitmap b = ((BitmapDrawable) d).getBitmap();
+                                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
+                                    image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
                     }
                     else if(command.contains(NEXT)) {
 
@@ -191,7 +191,9 @@ public class ServerActivity extends AppCompatActivity {
                                 }
                             }
                         })*/
-                        nextImage();
+                        pic_index++;
+                        if(pic_index == fileList.length - 4)
+                            pic_index = 1;
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
@@ -199,6 +201,8 @@ public class ServerActivity extends AppCompatActivity {
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
+
+                        nextImage();
                     }
                     else if(command.contains(SLIDESHOW)) {
                         String secsString = new String(command.split("_")[1]);
@@ -207,14 +211,6 @@ public class ServerActivity extends AppCompatActivity {
                         //startSlideShow(secs, runnable);
 
                         startSlideShow(secs);
-
-
-                        InetAddress IPAddress = receivePacket.getAddress();
-                        int port = receivePacket.getPort();
-                        String response = fileList[pic_index] + "";
-                        sendData = response.getBytes();
-                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-                        serverSocket.send(sendPacket);
                     }
                 }
             } catch (IOException e) {
@@ -253,9 +249,6 @@ public class ServerActivity extends AppCompatActivity {
             ServerActivity.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    pic_index++;
-                    if(pic_index == fileList.length - 4)
-                        pic_index = 1;
 
                     try {
                         InputStream in = assetManager.open(fileList[pic_index]);
