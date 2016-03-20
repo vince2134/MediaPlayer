@@ -17,12 +17,14 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ClientActivity extends AppCompatActivity {
 
     TextView fileName;
     EditText slideShowLength;
-    Button nextBtn, prevBtn, playBtn, uploadBtn;
+    Button nextBtn, prevBtn, playBtn, stopBtn, uploadBtn;
     ImageView image;
 
     String ipAddress;
@@ -52,12 +54,14 @@ public class ClientActivity extends AppCompatActivity {
         prevBtn = (Button) findViewById(R.id.prevBtn);
         playBtn = (Button) findViewById(R.id.playBtn);
         nextBtn = (Button) findViewById(R.id.nextBtn);
+        stopBtn = (Button) findViewById(R.id.stopBtn);
         uploadBtn = (Button) findViewById(R.id.uploadBtn);
 
         prevBtn.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
+                stopSlideShow();
                 ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.PREVIOUS);
                 clientTask.execute();
             }
@@ -66,6 +70,7 @@ public class ClientActivity extends AppCompatActivity {
         nextBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                stopSlideShow();
                 ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.NEXT);
                 clientTask.execute();
             }
@@ -74,6 +79,7 @@ public class ClientActivity extends AppCompatActivity {
         uploadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                stopSlideShow();
                 Intent intent = new Intent();
 
                 intent.setClass(getBaseContext(), ClientUploadActivity.class);
@@ -90,18 +96,59 @@ public class ClientActivity extends AppCompatActivity {
                 int secs;
                 try {
                     secs = Integer.parseInt(slideShowLength.getText().toString());
-                } catch(NumberFormatException e) {
+                } catch (NumberFormatException e) {
                     secs = 0;
                 }
+
                 if (secs > 0) {
-                    ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.SLIDESHOW + "_" + secs + "_");
-                    clientTask.execute();
-                }
-                else {
+                    /*ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.SLIDESHOW + "_" + secs + "_");
+                    clientTask.execute();*/
+                    startSlideShow(secs);
+                } else {
                     Toast.makeText(getBaseContext(), "Input valid pause length!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+
+        stopBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopSlideShow();
+            }
+        });
+    }
+
+    private Timer timer;
+    private TimerTask timerTask = new TimerTask() {
+        @Override
+        public void run() {
+            ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.NEXT);
+            clientTask.execute();
+        }
+    };
+
+    private void startSlideShow(int secs) {
+        final int seconds = secs;
+        ClientActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (timer != null) {
+                    return;
+                }
+
+                timer = new Timer();
+                timer.scheduleAtFixedRate(timerTask, 0, seconds);
+            }
+        });
+    }
+
+    public void stopSlideShow() {
+            /*slideShowStarted = false;
+            handler.removeCallbacks(nextImageRunnable);*/
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
     }
 
     private void setFileName(String fileName) {

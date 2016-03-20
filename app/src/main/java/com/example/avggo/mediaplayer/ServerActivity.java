@@ -39,7 +39,6 @@ public class ServerActivity extends AppCompatActivity {
     public static final String CONNECT = "Connect";
     public static final String NEXT = "Next";
     public static final String PREVIOUS = "Previous";
-    public static final String PLAY = "Play";
     public static final String SLIDESHOW = "Slideshow";
 
 
