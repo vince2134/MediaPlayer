@@ -103,7 +103,7 @@ public class ClientActivity extends AppCompatActivity {
                 if (secs > 0) {
                     /*ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.SLIDESHOW + "_" + secs + "_");
                     clientTask.execute();*/
-                    startSlideShow(secs);
+                    startSlideShow(secs * 1000);
                 } else {
                     Toast.makeText(getBaseContext(), "Input valid pause length!", Toast.LENGTH_SHORT).show();
                 }
