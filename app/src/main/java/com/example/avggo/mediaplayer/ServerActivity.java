@@ -73,7 +73,7 @@ public class ServerActivity extends AppCompatActivity {
     }
 
     private class SocketServerThread extends Thread {
-        private int pic_index = 0;
+        private int pic_index = 1;
         private String[] fileList;
         //private boolean slideShowStarted = false;
         //private Handler handler = new Handler();
@@ -133,6 +133,13 @@ public class ServerActivity extends AppCompatActivity {
                                 }
                             }
                         });
+
+                        InetAddress IPAddress = receivePacket.getAddress();
+                        int port = receivePacket.getPort();
+                        String response = fileList[pic_index] + "";
+                        sendData = response.getBytes();
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                        serverSocket.send(sendPacket);
                     }
                     else if(command.contains(PREVIOUS)) {
                         ServerActivity.this.runOnUiThread(new Runnable() {
@@ -140,7 +147,7 @@ public class ServerActivity extends AppCompatActivity {
                             public void run() {
                                 pic_index--;
                                 if (pic_index < 1)
-                                    pic_index = fileList.length - 4;
+                                    pic_index = fileList.length - 3;
 
                                 /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
                                 image.setImageResource(resource);*/
@@ -155,6 +162,13 @@ public class ServerActivity extends AppCompatActivity {
                                 }
                             }
                         });
+
+                        InetAddress IPAddress = receivePacket.getAddress();
+                        int port = receivePacket.getPort();
+                        String response = fileList[pic_index] + "";
+                        sendData = response.getBytes();
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                        serverSocket.send(sendPacket);
                     }
                     else if(command.contains(NEXT)) {
 
@@ -178,6 +192,13 @@ public class ServerActivity extends AppCompatActivity {
                             }
                         })*/
                         nextImage();
+
+                        InetAddress IPAddress = receivePacket.getAddress();
+                        int port = receivePacket.getPort();
+                        String response = fileList[pic_index] + "";
+                        sendData = response.getBytes();
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                        serverSocket.send(sendPacket);
                     }
                     else if(command.contains(SLIDESHOW)) {
                         String secsString = new String(command.split("_")[1]);
@@ -186,14 +207,15 @@ public class ServerActivity extends AppCompatActivity {
                         //startSlideShow(secs, runnable);
 
                         startSlideShow(secs);
+
+
+                        InetAddress IPAddress = receivePacket.getAddress();
+                        int port = receivePacket.getPort();
+                        String response = fileList[pic_index] + "";
+                        sendData = response.getBytes();
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                        serverSocket.send(sendPacket);
                     }
-                    
-                    InetAddress IPAddress = receivePacket.getAddress();
-                    int port = receivePacket.getPort();
-                    String response = fileList[pic_index] + "";
-                    sendData = response.getBytes();
-                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-                    serverSocket.send(sendPacket);
                 }
             } catch (IOException e) {
                 // TODO Auto-generated catch block
