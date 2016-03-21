@@ -144,7 +144,7 @@ public class ServerActivity extends AppCompatActivity {
                     else if(command.contains(PREVIOUS)) {
                         pic_index--;
                         if (pic_index < 1)
-                            pic_index = fileList.length - 4;
+                            pic_index = fileList.length - 2;
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
@@ -192,7 +192,7 @@ public class ServerActivity extends AppCompatActivity {
                             }
                         })*/
                         pic_index++;
-                        if(pic_index == fileList.length - 4)
+                        if(pic_index == fileList.length - 2)
                             pic_index = 1;
 
                         InetAddress IPAddress = receivePacket.getAddress();
