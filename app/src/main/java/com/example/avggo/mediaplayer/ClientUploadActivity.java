@@ -22,11 +22,16 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 
 public class ClientUploadActivity extends AppCompatActivity {
 
@@ -35,11 +40,14 @@ public class ClientUploadActivity extends AppCompatActivity {
 
     String ipAddress;
     int portNumber;
+    ArrayList <File> fileFragments;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client_upload);
+
+        fileFragments = new ArrayList<File>();
         initHandlers();
     }
 
@@ -62,6 +70,7 @@ public class ClientUploadActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 UploadTask uploadTask = new UploadTask(ipAddress, portNumber, filePath.getText().toString());
+                uploadTask.execute();
             }
         });
     }
@@ -250,20 +259,47 @@ public class ClientUploadActivity extends AppCompatActivity {
         protected Void doInBackground (Void... arg0) {
             DatagramSocket clientSocket;
             try {
-                clientSocket = new DatagramSocket();
+                //clientSocket = new DatagramSocket();
 
-                InetAddress IPAddress = InetAddress.getByName(dstAddress);
-                File myFile = new File (fPath);
-                byte [] data  = new byte[(int)myFile.length()];
-                DatagramPacket sendPacket = new DatagramPacket(data, data.length, IPAddress, dstPort);
-                clientSocket.send(sendPacket);
-                clientSocket.close();
+                //InetAddress IPAddress = InetAddress.getByName(dstAddress);
+
+                splitFile(new File(fPath));
+                //System.out.println(fileFragments.size());
+                Log.d("ClientUploadActivity", ""+fileFragments.size());
+                //byte [] data  = new byte[(int)myFile.length()];
+                //DatagramPacket sendPacket = new DatagramPacket(data, data.length, IPAddress, dstPort);
+                //clientSocket.close();
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
 
             return null;
+        }
+
+        @TargetApi(Build.VERSION_CODES.KITKAT)
+        public void splitFile(File f) throws IOException {
+            int partCounter = 1;//I like to name parts from 001, 002, 003, ...
+            //you can change it to 0 if you want 000, 001, ...
+
+            int sizeOfFrags = 1500;// 1500 byte
+            byte[] buffer = new byte[sizeOfFrags];
+
+            try (BufferedInputStream bis = new BufferedInputStream(
+                    new FileInputStream(f))) {//try-with-resources to ensure closing stream
+                String name = f.getName();
+
+                int chunkSize = 0;
+                while ((chunkSize = bis.read(buffer)) > 0) {
+                    //write each chunk of data into separate file with different number in name
+                    File newFile = new File(f.getParent(), name + "."
+                            + String.format("%03d", partCounter++));
+                    try (FileOutputStream out = new FileOutputStream(newFile)) {
+                        out.write(buffer, 0, chunkSize);//tmp is chunk size
+                        fileFragments.add(newFile);
+                    }
+                }
+            }
         }
     }
 }
