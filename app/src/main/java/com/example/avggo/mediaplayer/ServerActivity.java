@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -240,7 +241,7 @@ public class ServerActivity extends AppCompatActivity {
                         accumulatedBytes = new byte[0];
                         totalByteSize = 0;
                     } else if (command.contains(PROCESS_FILE)) {
-                        File processedFile = new File ("/storage/emulated/0/Pictures/IMG.jpg");
+                        File processedFile = new File (Environment.getExternalStorageDirectory() + "/Pictures/MediaPlayer/img" + (fileList.length+1) + ".jpg");
 
                         FileOutputStream fileOStream = new FileOutputStream(processedFile);
 
