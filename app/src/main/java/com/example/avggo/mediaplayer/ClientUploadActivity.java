@@ -66,6 +66,8 @@ public class ClientUploadActivity extends AppCompatActivity {
             public void onClick(View v) {
                 UploadTask uploadTask = new UploadTask(ipAddress, portNumber, filePath.getText().toString());
                 uploadTask.execute();
+
+                finish();
             }
         });
     }
