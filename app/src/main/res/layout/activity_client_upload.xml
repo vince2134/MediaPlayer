@@ -22,7 +22,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Text"
+        android:text="Choose File"
         android:id="@+id/filePathText"
         android:layout_marginLeft="27dp"
         android:layout_marginStart="27dp"

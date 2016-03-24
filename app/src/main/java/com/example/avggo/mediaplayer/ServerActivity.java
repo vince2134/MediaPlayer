@@ -13,6 +13,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.DatagramPacket;
@@ -40,7 +42,9 @@ public class ServerActivity extends AppCompatActivity {
     public static final String NEXT = "Next";
     public static final String PREVIOUS = "Previous";
     public static final String SLIDESHOW = "Slideshow";
-
+    public static final String RECEIVE_BYTES = "Receive Bytes";
+    public static final String RESTART_TOTAL_BYTES = "Restart Total Bytes";
+    public static final String PROCESS_FILE = "Process File";
 
     public static int IMAGE_COUNT;
     public static final String FILENAME = "img";
@@ -75,6 +79,9 @@ public class ServerActivity extends AppCompatActivity {
     private class SocketServerThread extends Thread {
         private int pic_index = 1;
         private String[] fileList;
+
+        byte[] accumulatedBytes = new byte[0];
+        int totalByteSize = 0;
         //private boolean slideShowStarted = false;
         //private Handler handler = new Handler();
         private Timer timer;
@@ -116,6 +123,7 @@ public class ServerActivity extends AppCompatActivity {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                     serverSocket.receive(receivePacket);
                     String command = new String(receivePacket.getData());
+
                     if(command.contains(CONNECT)) {
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
@@ -211,6 +219,33 @@ public class ServerActivity extends AppCompatActivity {
                         //startSlideShow(secs, runnable);
 
                         startSlideShow(secs);
+                    } else if (command.contains(RECEIVE_BYTES)) {
+                        byte[] recieveBytes = new byte[1500];
+
+                        DatagramPacket recieveFragment = new DatagramPacket(recieveBytes, recieveBytes.length);
+
+                        serverSocket.receive(recieveFragment);
+
+                        byte[] byteChunk = recieveFragment.getData();
+                        byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
+
+                        totalByteSize += recieveFragment.getLength();
+
+                        System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
+                        System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
+
+                        accumulatedBytes = new byte[totalByteSize];
+                        accumulatedBytes = tempBytes;
+                    } else if (command.contains(RESTART_TOTAL_BYTES)) { // set bytes back to default
+                        accumulatedBytes = new byte[0];
+                        totalByteSize = 0;
+                    } else if (command.contains(PROCESS_FILE)) {
+                        File processedFile = new File ("/storage/emulated/0/Pictures/IMG.jpg");
+
+                        FileOutputStream fileOStream = new FileOutputStream(processedFile);
+
+                        fileOStream.write(accumulatedBytes);
+                        fileOStream.close();
                     }
                 }
             } catch (IOException e) {

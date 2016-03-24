@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ContentUris;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -22,19 +21,14 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.Socket;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 
 public class ClientUploadActivity extends AppCompatActivity {
 
@@ -43,14 +37,12 @@ public class ClientUploadActivity extends AppCompatActivity {
 
     String ipAddress;
     int portNumber;
-    ArrayList <File> fileFragments;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client_upload);
 
-        fileFragments = new ArrayList<File>();
         initHandlers();
     }
 
@@ -265,10 +257,6 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                 splitAndSendFile(new File(fPath), IPAddress, dstPort);
 
-                for (int i = 0; i < fileFragments.size(); i++) {
-                    fileFragments.remove(i);
-                }
-
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -279,54 +267,51 @@ public class ClientUploadActivity extends AppCompatActivity {
 
         @TargetApi(Build.VERSION_CODES.KITKAT)
         private void splitAndSendFile(File f, InetAddress ipAddr, int dstPort) throws IOException {
-            int partCounter = 1;//I like to name parts from 001, 002, 003, ...
-            //you can change it to 0 if you want 000, 001, ...
+            DatagramSocket clientSocket;
+            clientSocket = new DatagramSocket();
 
-            int sizeOfFrags = 1500;// 1500 byte
-            byte[] buffer = new byte[sizeOfFrags];
+            String command = "";
+            DatagramPacket sendPacket;
+            DatagramPacket commandPacket;
+            byte[] buffer = new byte[1500];
 
-            try (BufferedInputStream bis = new BufferedInputStream(
-                    new FileInputStream(f))) {//try-with-resources to ensure closing stream
-                String name = f.getName();
+            FileInputStream fileIStream = new FileInputStream(f);
+            ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
 
-                int chunkSize = 0;
-                while ((chunkSize = bis.read(buffer)) > 0) {
-                    //write each chunk of data into separate file with different number in name
-                    File newFile = new File(f.getParent(), name + "."
-                            + String.format("%03d", partCounter++));
+            try {
 
-                    try (FileOutputStream out = new FileOutputStream(newFile)) {
-                        out.write(buffer, 0, chunkSize);
-                    }
+                for (int readNum; (readNum = fileIStream.read(buffer)) != -1;) {
+                    byteOStream.write(buffer, 0, readNum);
 
-                    // create new fileInputStream for chopped file
-                    FileInputStream fis = new FileInputStream(newFile);
+                    System.out.println("read " + readNum + " bytes,");
 
-                    ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
+                    command = "Receive Bytes";
 
-                    try {
-                        for (int readNum; (readNum = fis.read(buffer)) != -1;) {
-                            byteOStream.write(buffer, 0, readNum); //no doubt here is 0
-                            //Writes len bytes from the specified byte array starting at offset off to this byte array output stream.
-                            System.out.println("read " + readNum + " bytes,");
-                        }
-                    } catch (IOException ex) {
-                        Log.d(TAG, "Error in converting file to bytes");
-                    }
+                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+                    sendPacket = new DatagramPacket(byteOStream.toByteArray(), byteOStream.toByteArray().length, ipAddr, dstPort);
 
-                    byte[] sendBytes = byteOStream.toByteArray();
-
-                    Log.d(TAG, "" + sendBytes.length);
-
-                    newFile.delete();
-
-                    DatagramSocket clientSocket;
-
-                    clientSocket = new DatagramSocket();
-                    DatagramPacket sendPacket = new DatagramPacket(sendBytes, sendBytes.length, ipAddr, dstPort);
+                    clientSocket.send(commandPacket);
                     clientSocket.send(sendPacket);
+
+                    byteOStream.reset();
                 }
+            } catch (IOException ex) {
+                Log.d(TAG, "Error in converting file to bytes");
             }
+
+            byteOStream.close();
+
+            command = "Process File";
+            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+            clientSocket.send(commandPacket);
+
+            command = "Restart Total Bytes";
+            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+            clientSocket.send(commandPacket);
+
+            clientSocket.close();
+
+            Log.d(TAG, "Sent");
         }
     }
 }
