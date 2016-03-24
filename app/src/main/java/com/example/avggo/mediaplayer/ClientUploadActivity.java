@@ -23,13 +23,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
@@ -257,18 +260,15 @@ public class ClientUploadActivity extends AppCompatActivity {
         }
 
         protected Void doInBackground (Void... arg0) {
-            DatagramSocket clientSocket;
             try {
-                //clientSocket = new DatagramSocket();
+                InetAddress IPAddress = InetAddress.getByName(dstAddress);
 
-                //InetAddress IPAddress = InetAddress.getByName(dstAddress);
+                splitAndSendFile(new File(fPath), IPAddress, dstPort);
 
-                splitFile(new File(fPath));
-                //System.out.println(fileFragments.size());
-                Log.d("ClientUploadActivity", ""+fileFragments.size());
-                //byte [] data  = new byte[(int)myFile.length()];
-                //DatagramPacket sendPacket = new DatagramPacket(data, data.length, IPAddress, dstPort);
-                //clientSocket.close();
+                for (int i = 0; i < fileFragments.size(); i++) {
+                    fileFragments.remove(i);
+                }
+
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -278,7 +278,7 @@ public class ClientUploadActivity extends AppCompatActivity {
         }
 
         @TargetApi(Build.VERSION_CODES.KITKAT)
-        public void splitFile(File f) throws IOException {
+        private void splitAndSendFile(File f, InetAddress ipAddr, int dstPort) throws IOException {
             int partCounter = 1;//I like to name parts from 001, 002, 003, ...
             //you can change it to 0 if you want 000, 001, ...
 
@@ -294,10 +294,36 @@ public class ClientUploadActivity extends AppCompatActivity {
                     //write each chunk of data into separate file with different number in name
                     File newFile = new File(f.getParent(), name + "."
                             + String.format("%03d", partCounter++));
+
                     try (FileOutputStream out = new FileOutputStream(newFile)) {
-                        out.write(buffer, 0, chunkSize);//tmp is chunk size
-                        fileFragments.add(newFile);
+                        out.write(buffer, 0, chunkSize);
                     }
+
+                    // create new fileInputStream for chopped file
+                    FileInputStream fis = new FileInputStream(newFile);
+
+                    ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
+
+                    try {
+                        for (int readNum; (readNum = fis.read(buffer)) != -1;) {
+                            byteOStream.write(buffer, 0, readNum); //no doubt here is 0
+                            //Writes len bytes from the specified byte array starting at offset off to this byte array output stream.
+                            System.out.println("read " + readNum + " bytes,");
+                        }
+                    } catch (IOException ex) {
+                        Log.d(TAG, "Error in converting file to bytes");
+                    }
+
+                    byte[] sendBytes = byteOStream.toByteArray();
+
+                    Log.d(TAG, "" + sendBytes.length);
+
+                    newFile.delete();
+
+                    DatagramSocket clientSocket;
+
+                    clientSocket = new DatagramSocket();
+                    DatagramPacket sendPacket = new DatagramPacket(sendBytes, sendBytes.length, ipAddr, dstPort);
                 }
             }
         }
