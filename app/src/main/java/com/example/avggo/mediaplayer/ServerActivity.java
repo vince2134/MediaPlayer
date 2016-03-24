@@ -57,6 +57,30 @@ public class ServerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server);
 
+        exportAssetImages();
+
+        info = (TextView) findViewById(R.id.info);
+        infoip = (TextView) findViewById(R.id.infoip);
+        msg = (TextView) findViewById(R.id.msg);
+        portNumber = (EditText) findViewById(R.id.portNumberField);
+        createServer = (Button) findViewById(R.id.createServerBtn);
+        image = (ImageView) findViewById(R.id.imageView);
+
+        createServer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!portNumber.getText().toString().isEmpty()) {
+                    infoip.setText(getIpAddress());
+                    SocketServerPORT = Integer.parseInt(portNumber.getText().toString());
+                    Thread socketServerThread = new Thread(new SocketServerThread());
+                    socketServerThread.start();
+                } else
+                    Toast.makeText(getBaseContext(), "Please fill in port number field.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void exportAssetImages(){
         AssetManager assetManager = getAssets();
 
         String[] files = null;
@@ -107,26 +131,6 @@ public class ServerActivity extends AppCompatActivity {
             }
         }
         /* END of copying files from assets to local storage */
-
-        info = (TextView) findViewById(R.id.info);
-        infoip = (TextView) findViewById(R.id.infoip);
-        msg = (TextView) findViewById(R.id.msg);
-        portNumber = (EditText) findViewById(R.id.portNumberField);
-        createServer = (Button) findViewById(R.id.createServerBtn);
-        image = (ImageView) findViewById(R.id.imageView);
-
-        createServer.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!portNumber.getText().toString().isEmpty()) {
-                    infoip.setText(getIpAddress());
-                    SocketServerPORT = Integer.parseInt(portNumber.getText().toString());
-                    Thread socketServerThread = new Thread(new SocketServerThread());
-                    socketServerThread.start();
-                } else
-                    Toast.makeText(getBaseContext(), "Please fill in port number field.", Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     private class SocketServerThread extends Thread {
