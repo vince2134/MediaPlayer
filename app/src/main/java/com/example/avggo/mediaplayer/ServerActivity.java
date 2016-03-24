@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -55,6 +56,57 @@ public class ServerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server);
+
+        AssetManager assetManager = getAssets();
+
+        String[] files = null;
+
+        /* START of copying files from assets to local storage */
+        try {
+            files = assetManager.list("");
+        } catch (IOException e) {
+
+        }
+
+        if (files != null) for (String filename : files) {
+            InputStream IStream = null;
+            OutputStream OStream = null;
+
+            try {
+                IStream = assetManager.open(filename);
+                File OFile = new File(Environment.getExternalStorageDirectory() + "/Pictures/MediaPlayer/", filename);
+
+                OStream = new FileOutputStream(OFile);
+                byte[] buffer = new byte[1024];
+
+                int read;
+
+                while((read = IStream.read(buffer)) != -1){
+                    OStream.write(buffer, 0, read);
+                }
+
+            } catch (IOException ex) {
+
+            }
+
+            finally {
+                if (IStream != null) {
+                    try {
+                        IStream.close();
+                    } catch (IOException ex) {
+
+                    }
+                }
+                if (OStream != null) {
+                    try {
+                        OStream.close();
+                    } catch (IOException ex) {
+
+                    }
+                }
+            }
+        }
+        /* END of copying files from assets to local storage */
 
         info = (TextView) findViewById(R.id.info);
         infoip = (TextView) findViewById(R.id.infoip);
