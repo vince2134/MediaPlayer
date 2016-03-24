@@ -324,6 +324,7 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     clientSocket = new DatagramSocket();
                     DatagramPacket sendPacket = new DatagramPacket(sendBytes, sendBytes.length, ipAddr, dstPort);
+                    clientSocket.send(sendPacket);
                 }
             }
         }
