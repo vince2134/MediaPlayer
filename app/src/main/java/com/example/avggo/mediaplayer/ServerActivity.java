@@ -48,6 +48,8 @@ public class ServerActivity extends AppCompatActivity {
     public static final String RESTART_TOTAL_BYTES = "Restart Total Bytes";
     public static final String PROCESS_FILE = "Process File";
 
+    public static final String LOCAL_APP_STORAGE = Environment.getExternalStorageDirectory() + "/Pictures/MediaPlayer/";
+
     public static int IMAGE_COUNT;
     public static final String FILENAME = "img";
     ImageView image;
@@ -98,7 +100,7 @@ public class ServerActivity extends AppCompatActivity {
 
             try {
                 IStream = assetManager.open(filename);
-                File OFile = new File(Environment.getExternalStorageDirectory() + "/Pictures/MediaPlayer/", filename);
+                File OFile = new File(LOCAL_APP_STORAGE, filename);
 
                 OStream = new FileOutputStream(OFile);
                 byte[] buffer = new byte[1024];
@@ -297,7 +299,7 @@ public class ServerActivity extends AppCompatActivity {
                         accumulatedBytes = new byte[0];
                         totalByteSize = 0;
                     } else if (command.contains(PROCESS_FILE)) {
-                        File processedFile = new File (Environment.getExternalStorageDirectory() + "/Pictures/MediaPlayer/img" + (fileList.length+1) + ".jpg");
+                        File processedFile = new File (LOCAL_APP_STORAGE, "img" + fileList.length + ".jpg");
 
                         FileOutputStream fileOStream = new FileOutputStream(processedFile);
 
