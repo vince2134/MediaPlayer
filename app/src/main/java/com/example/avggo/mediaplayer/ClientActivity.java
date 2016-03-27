@@ -35,13 +35,19 @@ public class ClientActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client);
         initializeHandlers();
+        Toast.makeText(getBaseContext(), "Attempting to connect to server...", Toast.LENGTH_SHORT).show();
+        //connectToServer();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         connectToServer();
     }
 
     private void connectToServer() {
         ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.CONNECT);
         clientTask.execute();
-        Toast.makeText(getBaseContext(), "Successfully connected to server.", Toast.LENGTH_SHORT).show();
     }
 
     private void initializeHandlers() {
@@ -152,6 +158,9 @@ public class ClientActivity extends AppCompatActivity {
     }
 
     private void setFileName(String fileName) {
+        if (this.fileName.getText().equals("Filename"))
+            Toast.makeText(getBaseContext(), "Successfully connected to server.", Toast.LENGTH_SHORT).show();
+
         this.fileName.setText(fileName);
     }
 
@@ -184,18 +193,19 @@ public class ClientActivity extends AppCompatActivity {
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 clientSocket.receive(receivePacket);
                 response = new String(receivePacket.getData());
+                //System.out.println(response + " Ey");
+
                 ClientActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         setFileName(response);
                     }
                 });
-            } catch (SocketException e) {
-                e.printStackTrace();
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+                Toast.makeText(getBaseContext(), "Could not connect to server.", Toast.LENGTH_SHORT).show();
+                finish();
+
             }
             return null;
         }

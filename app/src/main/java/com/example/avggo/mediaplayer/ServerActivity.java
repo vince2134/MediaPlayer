@@ -278,27 +278,30 @@ public class ServerActivity extends AppCompatActivity {
                         //startSlideShow(secs, runnable);
 
                         startSlideShow(secs);
-                    } else if (command.contains(RECEIVE_BYTES)) {
-                        byte[] recieveBytes = new byte[1500];
+                    }
+                    else if (command.contains(RECEIVE_BYTES)) {
+                        byte[] receiveBytes = new byte[1500];
 
-                        DatagramPacket recieveFragment = new DatagramPacket(recieveBytes, recieveBytes.length);
+                        DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
 
-                        serverSocket.receive(recieveFragment);
+                        serverSocket.receive(receiveFragment);
 
-                        byte[] byteChunk = recieveFragment.getData();
+                        byte[] byteChunk = receiveFragment.getData();
                         byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
 
-                        totalByteSize += recieveFragment.getLength();
+                        totalByteSize += receiveFragment.getLength();
 
                         System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
                         System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
 
                         accumulatedBytes = new byte[totalByteSize];
                         accumulatedBytes = tempBytes;
-                    } else if (command.contains(RESTART_TOTAL_BYTES)) { // set bytes back to default
+                    }
+                    else if (command.contains(RESTART_TOTAL_BYTES)) { // set bytes back to default
                         accumulatedBytes = new byte[0];
                         totalByteSize = 0;
-                    } else if (command.contains(PROCESS_FILE)) {
+                    }
+                    else if (command.contains(PROCESS_FILE)) {
                         File processedFile = new File (LOCAL_APP_STORAGE, "img" + fileList.length + ".jpg");
 
                         FileOutputStream fileOStream = new FileOutputStream(processedFile);
