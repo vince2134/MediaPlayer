@@ -135,6 +135,12 @@ public class ServerActivity extends AppCompatActivity {
         /* END of copying files from assets to local storage */
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        serverSocket.close();
+    }
+
     private class SocketServerThread extends Thread {
         private int pic_index = 1;
         private String[] fileList;
