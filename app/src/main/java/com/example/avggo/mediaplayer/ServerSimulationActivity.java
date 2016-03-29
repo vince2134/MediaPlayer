@@ -24,12 +24,12 @@ public class ServerSimulationActivity extends AppCompatActivity {
     }
 
     protected void initializeHandlers(){
-        etLossProbability = (EditText) findViewById(R.id.etLossProbability);
-        etTimeout = (EditText) findViewById(R.id.etTimeout);
-        etDelay = (EditText) findViewById(R.id.etDelay);
+        etLossProbability = (EditText) findViewById(R.id.lossText);
+        etTimeout = (EditText) findViewById(R.id.timeoutText);
+        etDelay = (EditText) findViewById(R.id.delayText);
         rgVerbosity = (RadioGroup) findViewById(R.id.rg);
-        btnSave = (Button) findViewById(R.id.btnSave);
-        btnCancel = (Button) findViewById(R.id.btnCancel);
+        btnSave = (Button) findViewById(R.id.saveButton);
+        btnCancel = (Button) findViewById(R.id.cancelButton);
 
         RadioButton button;
 
