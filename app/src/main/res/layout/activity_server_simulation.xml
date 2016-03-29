@@ -14,26 +14,30 @@
         android:layout_height="wrap_content"
         android:text="Delay"
         android:id="@+id/delay"
-        android:textSize="16sp"
-        android:layout_marginTop="78dp"
+        android:textSize="18dp"
+        android:layout_marginTop="77dp"
+        android:textStyle="bold"
         android:layout_alignParentTop="true"
-        android:layout_alignRight="@+id/delayText"
-        android:layout_alignEnd="@+id/delayText"
-        android:textStyle="bold" />
+        android:layout_centerHorizontal="true" />
 
     <EditText
         android:layout_width="40sp"
         android:layout_height="wrap_content"
         android:id="@+id/delayText"
+        android:textSize="18dp"
+        android:hint="ms"
         android:layout_below="@+id/delay"
-        android:layout_centerHorizontal="true" />
+        android:layout_alignRight="@+id/textView4"
+        android:layout_alignEnd="@+id/textView4"
+        android:layout_alignLeft="@+id/lossText"
+        android:layout_alignStart="@+id/lossText" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Loss Probability"
         android:id="@+id/textView3"
-        android:textSize="16sp"
+        android:textSize="18dp"
         android:layout_below="@+id/delayText"
         android:layout_centerHorizontal="true"
         android:textStyle="bold" />
@@ -42,16 +46,19 @@
         android:layout_width="40sp"
         android:layout_height="wrap_content"
         android:id="@+id/lossText"
+        android:textSize="18dp"
         android:layout_below="@+id/textView3"
-        android:layout_alignLeft="@+id/delayText"
-        android:layout_alignStart="@+id/delayText" />
+        android:layout_alignLeft="@+id/textView4"
+        android:layout_alignStart="@+id/textView4"
+        android:layout_alignRight="@+id/textView4"
+        android:layout_alignEnd="@+id/textView4" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Timeout"
         android:id="@+id/textView4"
-        android:textSize="16sp"
+        android:textSize="18dp"
         android:layout_below="@+id/lossText"
         android:layout_centerHorizontal="true"
         android:textStyle="bold" />
@@ -61,14 +68,19 @@
         android:layout_height="wrap_content"
         android:id="@+id/timeoutText"
         android:layout_below="@+id/textView4"
-        android:layout_centerHorizontal="true" />
+        android:textSize="18dp"
+        android:hint="ms"
+        android:layout_alignLeft="@+id/textView4"
+        android:layout_alignStart="@+id/textView4"
+        android:layout_alignRight="@+id/textView4"
+        android:layout_alignEnd="@+id/textView4" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Verbosity"
         android:id="@+id/textView5"
-        android:textSize="16sp"
+        android:textSize="18dp"
         android:layout_below="@+id/timeoutText"
         android:layout_centerHorizontal="true"
         android:textStyle="bold" />
@@ -95,30 +107,15 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
 
-    <RadioButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Level 1"
-        android:id="@+id/radioButton"
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/rg"
         android:layout_below="@+id/textView5"
-        android:layout_alignLeft="@+id/radioButton3"
-        android:layout_alignStart="@+id/radioButton3" />
-
-    <RadioButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Level 2"
-        android:id="@+id/radioButton2"
-        android:layout_below="@+id/radioButton"
-        android:layout_alignLeft="@+id/radioButton"
-        android:layout_alignStart="@+id/radioButton" />
-
-    <RadioButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Level 3"
-        android:id="@+id/radioButton3"
-        android:layout_below="@+id/radioButton2"
-        android:layout_centerHorizontal="true" />
+        android:layout_alignRight="@+id/textView3"
+        android:layout_alignEnd="@+id/textView3"
+        android:layout_alignBottom="@+id/saveButton"
+        android:layout_alignLeft="@+id/textView5"
+        android:layout_alignStart="@+id/textView5"></RadioGroup>
 
 </RelativeLayout>

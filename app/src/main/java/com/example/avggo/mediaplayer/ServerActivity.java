@@ -1,6 +1,7 @@
 package com.example.avggo.mediaplayer;
 
 import android.app.ActionBar.LayoutParams;
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -36,7 +37,7 @@ import java.util.TimerTask;
 public class ServerActivity extends AppCompatActivity {
     TextView info, infoip, msg;
     EditText portNumber;
-    Button createServer;
+    Button createServer, simulateButton;
     DatagramSocket serverSocket;
     static int SocketServerPORT;
 
@@ -72,6 +73,7 @@ public class ServerActivity extends AppCompatActivity {
         portNumber = (EditText) findViewById(R.id.portNumberField);
         createServer = (Button) findViewById(R.id.createServerBtn);
         image = (ImageSwitcher) findViewById(R.id.imageSwitcher);
+        simulateButton = (Button) findViewById(R.id.simulateButton);
 
         image.setFactory(new ViewFactory() {
             @Override
@@ -83,8 +85,6 @@ public class ServerActivity extends AppCompatActivity {
             }
         });
 
-
-
         createServer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -95,6 +95,15 @@ public class ServerActivity extends AppCompatActivity {
                     socketServerThread.start();
                 } else
                     Toast.makeText(getBaseContext(), "Please fill in port number field.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        simulateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setClass(getBaseContext(), ServerSimulationActivity.class);
+                startActivity(intent);
             }
         });
     }
