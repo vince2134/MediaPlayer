@@ -1,5 +1,6 @@
 package com.example.avggo.mediaplayer;
 
+import android.app.ActionBar.LayoutParams;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -8,11 +9,15 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageSwitcher;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ViewSwitcher.ViewFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,7 +57,7 @@ public class ServerActivity extends AppCompatActivity {
 
     public static int IMAGE_COUNT;
     public static final String FILENAME = "img";
-    ImageView image;
+    ImageSwitcher image;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +71,19 @@ public class ServerActivity extends AppCompatActivity {
         msg = (TextView) findViewById(R.id.msg);
         portNumber = (EditText) findViewById(R.id.portNumberField);
         createServer = (Button) findViewById(R.id.createServerBtn);
-        image = (ImageView) findViewById(R.id.imageView);
+        image = (ImageSwitcher) findViewById(R.id.imageSwitcher);
+
+        image.setFactory(new ViewFactory() {
+            @Override
+            public View makeView() {
+                ImageView myView = new ImageView(getApplicationContext());
+                myView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                myView.setLayoutParams(new ImageSwitcher.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+                return myView;
+            }
+        });
+
+
 
         createServer.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -175,6 +192,9 @@ public class ServerActivity extends AppCompatActivity {
                 fileList = assetManager.list("");
                 IMAGE_COUNT = fileList.length - 3;
 
+                for(int i = 0; i < fileList.length; i++)
+                    System.out.println(fileList[i]);
+
                 ServerActivity.this.runOnUiThread(new Runnable() {
 
                     @Override
@@ -190,6 +210,11 @@ public class ServerActivity extends AppCompatActivity {
                     String command = new String(receivePacket.getData());
 
                     if(command.contains(CONNECT)) {
+                        Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_in);
+                        Animation out = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_out);
+                        image.setInAnimation(in);
+                        image.setOutAnimation(out);
+
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
                         String response = fileList[pic_index] + "";
@@ -215,9 +240,14 @@ public class ServerActivity extends AppCompatActivity {
                         });
                     }
                     else if(command.contains(PREVIOUS)) {
+                        Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.slide_in_left);
+                        Animation out = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.slide_out_right);
+                        image.setInAnimation(in);
+                        image.setOutAnimation(out);
+
                         pic_index--;
                         if (pic_index < 1)
-                            pic_index = fileList.length - 2;
+                            pic_index = fileList.length - 3;
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
@@ -264,6 +294,11 @@ public class ServerActivity extends AppCompatActivity {
                                 }
                             }
                         })*/
+                        Animation in = AnimationUtils.loadAnimation(getBaseContext(), R.anim.slide_in_right);
+                        Animation out = AnimationUtils.loadAnimation(getBaseContext(), R.anim.slide_out_left);
+                        image.setInAnimation(in);
+                        image.setOutAnimation(out);
+
                         pic_index++;
                         if(pic_index == fileList.length - 2)
                             pic_index = 1;
