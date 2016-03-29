@@ -33,10 +33,9 @@ public class ClientSimulationActivity extends AppCompatActivity {
         btnSave = (Button) findViewById(R.id.btnSave);
         btnCancel = (Button) findViewById(R.id.btnCancel);
 
-
+        /*
         RadioButton button;
 
-        button = new RadioButton(this);
         button.setText("Level 1");
         rgVerbosity.addView(button);
 
@@ -46,7 +45,7 @@ public class ClientSimulationActivity extends AppCompatActivity {
 
         button = new RadioButton(this);
         button.setText("Level 3");
-        rgVerbosity.addView(button);
+        rgVerbosity.addView(button);*/
 
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -15,12 +15,12 @@
         android:text="Loss Probability"
         android:textSize="20dp"
         android:id="@+id/textView3"
-        android:layout_marginTop="38dp"
+        android:layout_marginTop="33dp"
         android:textStyle="bold"
-        android:layout_alignParentTop="true"
+        android:contextClickable="true"
+        android:layout_below="@+id/textView7"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:contextClickable="true" />
+        android:layout_alignParentStart="true" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -104,9 +104,31 @@
         android:layout_below="@+id/textView6"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
+        android:id="@+id/rgVerbosity"
         android:layout_alignRight="@+id/etDelay"
-        android:layout_alignEnd="@+id/etDelay"
-        android:id="@+id/rgVerbosity"></RadioGroup>
+        android:layout_alignEnd="@+id/etDelay">
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Level 1"
+            android:id="@+id/rbLevel1"
+            android:checked="true" />
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Level 2"
+            android:id="@+id/rbLevel2"
+            android:checked="false" />
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Level 3"
+            android:id="@+id/rbLevel3"
+            android:checked="false" />
+    </RadioGroup>
 
     <Button
         android:layout_width="wrap_content"
@@ -128,5 +150,15 @@
         android:layout_alignParentEnd="true"
         android:layout_alignLeft="@+id/btnSave"
         android:layout_alignStart="@+id/btnSave" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Client Simulation"
+        android:id="@+id/textView7"
+        android:textStyle="bold"
+        android:textSize="25dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>
