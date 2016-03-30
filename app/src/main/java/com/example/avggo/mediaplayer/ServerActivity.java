@@ -21,6 +21,7 @@ import android.widget.Toast;
 import android.widget.ViewSwitcher.ViewFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +31,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -40,6 +42,8 @@ public class ServerActivity extends AppCompatActivity {
     Button createServer, simulateButton;
     DatagramSocket serverSocket;
     static int SocketServerPORT;
+
+    ArrayList<File> fileCollection = new ArrayList<File>();
 
     //Hash Keys
     public static final String KEY_ADDRESS = "IP_Address";
@@ -66,6 +70,14 @@ public class ServerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_server);
 
         exportAssetImages();
+
+        //System.out.println (fileCollection.size());
+
+        /*
+        for (File f : fileCollection) {
+            System.out.println (f.getPath());
+        }
+        */
 
         info = (TextView) findViewById(R.id.info);
         infoip = (TextView) findViewById(R.id.infoip);
@@ -137,6 +149,8 @@ public class ServerActivity extends AppCompatActivity {
                     OStream.write(buffer, 0, read);
                 }
 
+                fileCollection.add(OFile);
+
             } catch (IOException ex) {
 
             }
@@ -169,8 +183,7 @@ public class ServerActivity extends AppCompatActivity {
     }
 
     private class SocketServerThread extends Thread {
-        private int pic_index = 1;
-        private String[] fileList;
+        private int pic_index = 0;
 
         byte[] accumulatedBytes = new byte[0];
         int totalByteSize = 0;
@@ -199,11 +212,6 @@ public class ServerActivity extends AppCompatActivity {
                 byte[] receiveData = new byte[1024];
                 byte[] sendData;
                 assetManager = getAssets();
-                fileList = assetManager.list("");
-                IMAGE_COUNT = fileList.length - 3;
-
-                for(int i = 0; i < fileList.length; i++)
-                    System.out.println(fileList[i]);
 
                 ServerActivity.this.runOnUiThread(new Runnable() {
 
@@ -227,7 +235,7 @@ public class ServerActivity extends AppCompatActivity {
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
-                        String response = fileList[pic_index] + "";
+                        String response = fileCollection.get(pic_index).getName();
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
@@ -238,7 +246,7 @@ public class ServerActivity extends AppCompatActivity {
                                 /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
                                 image.setImageResource(resource);*/
                                 try {
-                                    InputStream in = assetManager.open(fileList[pic_index]);
+                                    FileInputStream in = new FileInputStream(fileCollection.get(pic_index));
                                     Drawable d = Drawable.createFromStream(in, null);
                                     Bitmap b = ((BitmapDrawable) d).getBitmap();
                                     Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
@@ -256,12 +264,12 @@ public class ServerActivity extends AppCompatActivity {
                         image.setOutAnimation(out);
 
                         pic_index--;
-                        if (pic_index < 1)
-                            pic_index = fileList.length - 3;
+                        if (pic_index < 0)
+                            pic_index = fileCollection.size() - 1;
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
-                        String response = fileList[pic_index] + "";
+                        String response = fileCollection.get(pic_index).getName();
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
@@ -272,7 +280,7 @@ public class ServerActivity extends AppCompatActivity {
                                 /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
                                 image.setImageResource(resource);*/
                                 try {
-                                    InputStream in = assetManager.open(fileList[pic_index]);
+                                    FileInputStream in = new FileInputStream(fileCollection.get(pic_index));
                                     Drawable d = Drawable.createFromStream(in, null);
                                     Bitmap b = ((BitmapDrawable) d).getBitmap();
                                     Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
@@ -310,12 +318,12 @@ public class ServerActivity extends AppCompatActivity {
                         image.setOutAnimation(out);
 
                         pic_index++;
-                        if(pic_index == fileList.length - 2)
-                            pic_index = 1;
+                        if(pic_index == fileCollection.size())
+                            pic_index = 0;
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
-                        String response = fileList[pic_index] + "";
+                        String response = fileCollection.get(pic_index).getName();
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
@@ -353,11 +361,14 @@ public class ServerActivity extends AppCompatActivity {
                         totalByteSize = 0;
                     }
                     else if (command.contains(PROCESS_FILE)) {
-                        File processedFile = new File (LOCAL_APP_STORAGE, "img" + fileList.length + ".jpg");
+                        File processedFile = new File (LOCAL_APP_STORAGE, "img" + (fileCollection.size()-1) + ".jpg");
 
                         FileOutputStream fileOStream = new FileOutputStream(processedFile);
 
                         fileOStream.write(accumulatedBytes);
+
+                        fileCollection.add(processedFile);
+
                         fileOStream.close();
                     }
                 }
@@ -399,7 +410,7 @@ public class ServerActivity extends AppCompatActivity {
                 public void run() {
 
                     try {
-                        InputStream in = assetManager.open(fileList[pic_index]);
+                        FileInputStream in = new FileInputStream(fileCollection.get(pic_index));
                         Drawable d = Drawable.createFromStream(in, null);
                         Bitmap b = ((BitmapDrawable)d).getBitmap();
                         Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
