@@ -231,6 +231,7 @@ public class ClientActivity extends AppCompatActivity {
 
                 clientSocket.receive(receivePacket);
                 received = true;
+                t.cancel();
                 response = new String(receivePacket.getData());
                 //System.out.println(response + " Ey");
 
