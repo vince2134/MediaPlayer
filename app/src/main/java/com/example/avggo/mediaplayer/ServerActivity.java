@@ -373,7 +373,6 @@ public class ServerActivity extends AppCompatActivity {
                     }
                 }
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -444,7 +443,6 @@ public class ServerActivity extends AppCompatActivity {
             }
 
         } catch (SocketException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             ip += "Something Wrong! " + e.toString() + "\n";
         }

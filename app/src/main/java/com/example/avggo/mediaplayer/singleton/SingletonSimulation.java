@@ -1,32 +1,29 @@
-package com.example.avggo.mediaplayer;
+package com.example.avggo.mediaplayer.singleton;
+
+import java.util.Random;
 
 /**
  * Created by kevin on 3/30/2016.
  */
-public class SingletonServerSimulation {
+public abstract class SingletonSimulation {
 
-    private static SingletonServerSimulation singletonSimulation;
-    private static int lossProbability;
-    private static int timeout;
-    private static int delay;
-    private static int verbosity;
+    //protected static SingletonSimulation simulation;
+    protected static int lossProbability;
+    protected static int timeout;
+    protected static int delay;
+    protected static int verbosity;
 
-    private SingletonServerSimulation() {}
+    protected SingletonSimulation() {}
 
-    public static SingletonServerSimulation getInstance() {
-        if (singletonSimulation == null) {
-            singletonSimulation = new SingletonServerSimulation();
-            lossProbability = 0;
-            timeout = 0;
-            delay = 0;
-            verbosity = 1;
-        }
-
-        return singletonSimulation;
+    protected static void setToDefaultSettings() {
+        lossProbability = 0;
+        timeout = 3;
+        delay = 0;
+        verbosity = 1;
     }
 
     public boolean setLossProbability(int lp) {
-        if (lp >= 0) {
+        if (lp >= 0 && lp <= 100) {
             lossProbability = lp;
             return true;
         }
@@ -71,5 +68,12 @@ public class SingletonServerSimulation {
 
     public int getVerbosity() {
         return verbosity;
+    }
+
+    public boolean getRandomLossProbability() {
+        Random rand = new Random();
+        int n  = rand.nextInt(100) + 1;
+
+        return n <= lossProbability;
     }
 }
