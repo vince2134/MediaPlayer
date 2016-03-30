@@ -361,7 +361,7 @@ public class ServerActivity extends AppCompatActivity {
                         totalByteSize = 0;
                     }
                     else if (command.contains(PROCESS_FILE)) {
-                        File processedFile = new File (LOCAL_APP_STORAGE, "img" + (fileCollection.size()-1) + ".jpg");
+                        File processedFile = new File (LOCAL_APP_STORAGE, "img" + fileCollection.size() + ".jpg");
 
                         FileOutputStream fileOStream = new FileOutputStream(processedFile);
 
