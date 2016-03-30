@@ -7,16 +7,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.avggo.mediaplayer.singleton.SingletonClientSimulation;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -25,7 +24,7 @@ public class ClientActivity extends AppCompatActivity {
     TextView fileName;
     EditText slideShowLength;
     Button nextBtn, prevBtn, playBtn, stopBtn, uploadBtn, simulateBtn;
-    ImageView image;
+    //ImageView image;
 
     String ipAddress;
     int portNumber;
@@ -191,6 +190,11 @@ public class ClientActivity extends AppCompatActivity {
         protected Void doInBackground(Void... arg0) {
 
             //Socket socket = null;
+            SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+
+
+
+
             DatagramSocket clientSocket;
             try {
                 clientSocket = new DatagramSocket();
@@ -199,8 +203,20 @@ public class ClientActivity extends AppCompatActivity {
 
                 sendData = command.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(dstAddress), dstPort);
+
+                if (!settings.getRandomLossProbability()) {
+                    Toast.makeText(getBaseContext(), "Packet lost!", Toast.LENGTH_SHORT).show();
+                    System.out.println(sendPacket.toString());
+                    return null;
+                }
+
                 clientSocket.send(sendPacket);
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+
+                /*********************************
+                 * TODO                          *
+                 * Place count for timeout here! *
+                 *********************************/
                 clientSocket.receive(receivePacket);
                 response = new String(receivePacket.getData());
                 //System.out.println(response + " Ey");

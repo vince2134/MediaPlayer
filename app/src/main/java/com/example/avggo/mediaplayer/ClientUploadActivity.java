@@ -260,7 +260,6 @@ public class ClientUploadActivity extends AppCompatActivity {
                 splitAndSendFile(new File(fPath), IPAddress, dstPort);
 
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
 

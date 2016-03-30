@@ -8,6 +8,8 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
+import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
+
 public class ServerSimulationActivity extends AppCompatActivity {
     EditText etLossProbability;
     EditText etTimeout;
