@@ -180,6 +180,7 @@ public class ClientActivity extends AppCompatActivity {
         private String response = "";
         private String command;
 
+        private boolean received = false;
         ClientTask(String addr, int port, String command){
             dstAddress = addr;
             dstPort = port;
@@ -217,7 +218,19 @@ public class ClientActivity extends AppCompatActivity {
                  * TODO                          *
                  * Place count for timeout here! *
                  *********************************/
+                Timer t = new Timer();
+                t.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        // do stuff here
+                        if (!received) {
+                            Toast.makeText(getBaseContext(), "Timeout!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }, settings.getTimeout());
+
                 clientSocket.receive(receivePacket);
+                received = true;
                 response = new String(receivePacket.getData());
                 //System.out.println(response + " Ey");
 
