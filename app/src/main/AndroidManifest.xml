@@ -23,6 +23,7 @@
         <activity android:name=".ClientActivity" />
         <activity android:name=".ClientConnectActivity" />
         <activity android:name=".ClientUploadActivity" />
+        <activity android:name=".ClientSimulationActivity" />
         <activity android:name=".ServerSimulationActivity" />
     </application>
 

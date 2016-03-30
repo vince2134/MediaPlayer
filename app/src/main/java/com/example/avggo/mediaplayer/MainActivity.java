@@ -44,7 +44,9 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent();
                 intent.setClass(getBaseContext(), ClientConnectActivity.class);
+                //intent.setClass(getBaseContext(), ClientSimulationActivity.class);
                 startActivity(intent);
+
             }
         });
     }

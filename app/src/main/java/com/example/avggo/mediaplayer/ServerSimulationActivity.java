@@ -64,19 +64,25 @@ public class ServerSimulationActivity extends AppCompatActivity {
 
                 int delay;
                 try {
-                    delay = Integer.parseInt(etTimeout.getText().toString());
+                    delay = Integer.parseInt(etDelay.getText().toString());
                 } catch (NumberFormatException e) {
                     delay = 0;
                 }
 
                 int verbosity;
                 try {
-                    verbosity = Integer.parseInt(etTimeout.getText().toString());
+                    //verbosity =
+                    if (rgVerbosity.getChildAt(0).isSelected())
+                        verbosity = 1;
+                    else if (rgVerbosity.getChildAt(0).isSelected())
+                        verbosity = 2;
+                    else
+                        verbosity = 3;
                 } catch (NumberFormatException e) {
                     verbosity = 1;
                 }
 
-                SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+                SingletonServerSimulation settings = SingletonServerSimulation.getInstance();
                 settings.setLossProbability(lossProbability);
                 settings.setTimeout(timeout);
                 settings.setDelay(delay);

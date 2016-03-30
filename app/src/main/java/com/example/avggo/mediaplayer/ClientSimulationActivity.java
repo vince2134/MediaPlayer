@@ -36,6 +36,7 @@ public class ClientSimulationActivity extends AppCompatActivity {
         /*
         RadioButton button;
 
+        button = new RadioButton(this);
         button.setText("Level 1");
         rgVerbosity.addView(button);
 
@@ -50,7 +51,47 @@ public class ClientSimulationActivity extends AppCompatActivity {
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                int lossProbability;
+                try {
+                    lossProbability = Integer.parseInt(etLossProbability.getText().toString());
+                } catch (NumberFormatException e) {
+                    lossProbability = 0;
+                }
 
+                int timeout;
+                try {
+                    timeout = Integer.parseInt(etTimeout.getText().toString());
+                } catch (NumberFormatException e) {
+                    timeout = 0;
+                }
+
+                int delay;
+                try {
+                    delay = Integer.parseInt(etDelay.getText().toString());
+                } catch (NumberFormatException e) {
+                    delay = 0;
+                }
+
+                int verbosity;
+                try {
+                    //verbosity =
+                    if (rgVerbosity.getChildAt(0).isSelected())
+                        verbosity = 1;
+                    else if (rgVerbosity.getChildAt(0).isSelected())
+                        verbosity = 2;
+                    else
+                        verbosity = 3;
+                } catch (Exception e) {
+                    verbosity = 1;
+                }
+
+                SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+                settings.setLossProbability(lossProbability);
+                settings.setTimeout(timeout);
+                settings.setDelay(delay);
+                settings.setVerbosity(verbosity);
+
+                finish();
             }
         });
 
