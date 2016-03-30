@@ -24,7 +24,7 @@ public class ClientActivity extends AppCompatActivity {
 
     TextView fileName;
     EditText slideShowLength;
-    Button nextBtn, prevBtn, playBtn, stopBtn, uploadBtn;
+    Button nextBtn, prevBtn, playBtn, stopBtn, uploadBtn, simulateBtn;
     ImageView image;
 
     String ipAddress;
@@ -62,6 +62,7 @@ public class ClientActivity extends AppCompatActivity {
         nextBtn = (Button) findViewById(R.id.nextBtn);
         stopBtn = (Button) findViewById(R.id.stopBtn);
         uploadBtn = (Button) findViewById(R.id.uploadBtn);
+        simulateBtn = (Button) findViewById(R.id.btnSimulate);
 
         prevBtn.setOnClickListener(new View.OnClickListener() {
 
@@ -120,6 +121,15 @@ public class ClientActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 stopSlideShow();
+            }
+        });
+
+        simulateBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setClass(getBaseContext(), ClientSimulationActivity.class);
+                startActivity(intent);
             }
         });
     }

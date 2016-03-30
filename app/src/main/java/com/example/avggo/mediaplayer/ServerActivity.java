@@ -164,7 +164,8 @@ public class ServerActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        serverSocket.close();
+        if (serverSocket != null)
+            serverSocket.close();
     }
 
     private class SocketServerThread extends Thread {

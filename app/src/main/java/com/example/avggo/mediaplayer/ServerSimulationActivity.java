@@ -48,7 +48,41 @@ public class ServerSimulationActivity extends AppCompatActivity {
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                int lossProbability;
+                try {
+                    lossProbability = Integer.parseInt(etLossProbability.getText().toString());
+                } catch (NumberFormatException e) {
+                    lossProbability = 0;
+                }
 
+                int timeout;
+                try {
+                    timeout = Integer.parseInt(etTimeout.getText().toString());
+                } catch (NumberFormatException e) {
+                    timeout = 0;
+                }
+
+                int delay;
+                try {
+                    delay = Integer.parseInt(etTimeout.getText().toString());
+                } catch (NumberFormatException e) {
+                    delay = 0;
+                }
+
+                int verbosity;
+                try {
+                    verbosity = Integer.parseInt(etTimeout.getText().toString());
+                } catch (NumberFormatException e) {
+                    verbosity = 1;
+                }
+
+                SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+                settings.setLossProbability(lossProbability);
+                settings.setTimeout(timeout);
+                settings.setDelay(delay);
+                settings.setVerbosity(verbosity);
+
+                finish();
             }
         });
 

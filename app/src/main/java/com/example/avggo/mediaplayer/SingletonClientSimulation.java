@@ -15,7 +15,6 @@ public class SingletonClientSimulation {
 
     public static SingletonClientSimulation getInstance() {
         if (clientSimulation == null) {
-
             clientSimulation = new SingletonClientSimulation();
             lossProbability = 0;
             timeout = 0;
@@ -56,5 +55,21 @@ public class SingletonClientSimulation {
             return true;
         }
         return false;
+    }
+
+    public int getLossProbability() {
+        return lossProbability;
+    }
+
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public int getDelay() {
+        return delay;
+    }
+
+    public int getVerbosity() {
+        return verbosity;
     }
 }

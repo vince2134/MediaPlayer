@@ -130,7 +130,8 @@
         android:id="@+id/uploadBtn"
         style="@style/Base.Widget.AppCompat.Button.Colored"
         android:layout_below="@+id/playBtn"
-        android:layout_centerHorizontal="true" />
+        android:layout_alignRight="@+id/playBtn"
+        android:layout_alignEnd="@+id/playBtn" />
 
     <Button
         style="?android:attr/buttonStyleSmall"
@@ -144,6 +145,15 @@
         android:layout_toEndOf="@+id/fileNameText"
         android:layout_alignLeft="@+id/nextBtn"
         android:layout_alignStart="@+id/nextBtn" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Simulate"
+        android:id="@+id/btnSimulate"
+        android:layout_below="@+id/stopBtn"
+        android:layout_alignLeft="@+id/stopBtn"
+        android:layout_alignStart="@+id/stopBtn" />
 
 </RelativeLayout>
 
