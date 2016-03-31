@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
@@ -24,6 +25,7 @@ import android.widget.Toast;
 import com.example.avggo.mediaplayer.fastretransmit.Ack;
 import com.example.avggo.mediaplayer.fastretransmit.Converter;
 import com.example.avggo.mediaplayer.fastretransmit.Packet;
+import com.example.avggo.mediaplayer.singleton.SingletonClientSimulation;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -34,6 +36,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ClientUploadActivity extends AppCompatActivity {
 
@@ -247,6 +251,16 @@ public class ClientUploadActivity extends AppCompatActivity {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
 
+    private void generateToast(String message) {
+        final String text = message;
+        ClientUploadActivity.this.runOnUiThread( new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     class UploadTask extends AsyncTask<Void, Void, Void>{
         private String dstAddress;
         private int dstPort;
@@ -295,6 +309,23 @@ public class ClientUploadActivity extends AppCompatActivity {
             try {
 
                 for (int readNum; (readNum = fileIStream.read(buffer)) != -1;) {
+
+                    SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+
+                    if (settings.getRandomLossProbability()) {
+                        generateToast("Packet lost!");
+                        System.out.println("Packet lost!");
+                        //System.out.println("Client: " + sendPacket.toString());
+                        continue;
+                    }
+
+                    /*if (settings.getRandomLossProbability()) {
+                        System.out.println("Packet lost!");
+                        this.(settings.getDelay());
+                        continue;
+                    }*/
+
+
                     byteOStream.write(buffer, 0, readNum);
 
                     System.out.println("read " + readNum + " bytes,");
@@ -310,6 +341,7 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
                     sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
+
 
                     clientSocket.send(commandPacket); // command Server to Receive incoming bytes
                     clientSocket.send(sendPacket); // send bytes to Server
