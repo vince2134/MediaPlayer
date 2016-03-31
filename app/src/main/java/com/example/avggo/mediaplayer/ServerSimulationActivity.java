@@ -9,6 +9,7 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
 import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
+import com.example.avggo.mediaplayer.singleton.SingletonSimulation;
 
 public class ServerSimulationActivity extends AppCompatActivity {
     EditText etLossProbability;
@@ -54,21 +55,21 @@ public class ServerSimulationActivity extends AppCompatActivity {
                 try {
                     lossProbability = Integer.parseInt(etLossProbability.getText().toString());
                 } catch (NumberFormatException e) {
-                    lossProbability = 0;
+                    lossProbability = SingletonSimulation.LOSS_PROBABILITY_DEFAULT;
                 }
 
                 int timeout;
                 try {
                     timeout = Integer.parseInt(etTimeout.getText().toString());
                 } catch (NumberFormatException e) {
-                    timeout = 0;
+                    timeout = SingletonSimulation.TIMEOUT_DEFAULT;
                 }
 
                 int delay;
                 try {
                     delay = Integer.parseInt(etDelay.getText().toString());
                 } catch (NumberFormatException e) {
-                    delay = 0;
+                    delay = SingletonSimulation.DELAY_DEFAULT;
                 }
 
                 int verbosity;
@@ -81,7 +82,7 @@ public class ServerSimulationActivity extends AppCompatActivity {
                     else
                         verbosity = 3;
                 } catch (NumberFormatException e) {
-                    verbosity = 1;
+                    verbosity = SingletonSimulation.VERBOSITY_DEFAULT;
                 }
 
                 SingletonServerSimulation settings = SingletonServerSimulation.getInstance();
