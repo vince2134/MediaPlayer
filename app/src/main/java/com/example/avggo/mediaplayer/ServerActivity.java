@@ -20,6 +20,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher.ViewFactory;
 
+import com.example.avggo.mediaplayer.fastretransmit.Ack;
+import com.example.avggo.mediaplayer.fastretransmit.Converter;
+import com.example.avggo.mediaplayer.fastretransmit.Packet;
 import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
 
 import java.io.File;
@@ -251,8 +254,10 @@ public class ServerActivity extends AppCompatActivity {
 
                         System.out.println(new Date().toString());
 
-                        byte[] receiveBytes = new byte[1500];
+                        byte[] receiveBytes = new byte[2048];
                         DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
+                        DatagramPacket ackPacket;
+                        int prevSeqNo = -1;
 
                         try {
                             Timer t = new Timer();
@@ -283,16 +288,32 @@ public class ServerActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
 
-                        byte[] byteChunk = receiveFragment.getData();
+                        Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
+
+                        byte[] byteChunk = receivedPacket.getData();
                         byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
 
                         totalByteSize += receiveFragment.getLength();
+
+                        if (((receivedPacket.getSeqNo()-1) != prevSeqNo) && (prevSeqNo != -1)) {
+                            Ack ack = new Ack(prevSeqNo);
+
+                            byte[] sendAck = Converter.toBytes(ack);
+
+                            ackPacket = new DatagramPacket(sendAck, sendAck.length, receiveFragment.getAddress(), receiveFragment.getPort());
+
+                            serverSocket.send(ackPacket);
+                        } else {
+                            serverSocket.send(new DatagramPacket(null, 0, receiveFragment.getAddress(), receiveFragment.getPort()));
+                        }
 
                         System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
                         System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
 
                         accumulatedBytes = new byte[totalByteSize];
                         accumulatedBytes = tempBytes;
+
+                        prevSeqNo = receivedPacket.getSeqNo();
                     }
                     else if (command.contains(CONNECT)) {
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_in);
@@ -390,6 +411,8 @@ public class ServerActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
         }
