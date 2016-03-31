@@ -206,9 +206,9 @@ public class ClientActivity extends AppCompatActivity {
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(dstAddress), dstPort);
 
                 if (!settings.getRandomLossProbability()) {
-                    Toast.makeText(getBaseContext(), "Packet lost!", Toast.LENGTH_SHORT).show();
+/*                    Toast.makeText(getBaseContext(), "Packet lost!", Toast.LENGTH_SHORT).show();
                     System.out.println(sendPacket.toString());
-                    return null;
+                    return null;*/
                 }
 
                 clientSocket.send(sendPacket);
@@ -224,7 +224,7 @@ public class ClientActivity extends AppCompatActivity {
                     public void run() {
                         // do stuff here
                         if (!received) {
-                            Toast.makeText(getBaseContext(), "Timeout!", Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(getBaseContext(), "Timeout!", Toast.LENGTH_SHORT).show();
                         }
                     }
                 }, settings.getTimeout());

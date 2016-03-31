@@ -20,6 +20,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher.ViewFactory;
 
+import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -32,6 +34,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -233,6 +236,9 @@ public class ServerActivity extends AppCompatActivity {
                         image.setInAnimation(in);
                         image.setOutAnimation(out);
 
+                        for(int i = 0; i < fileCollection.size(); i++)
+                            System.out.println(fileCollection.get(i).getName());
+
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
                         String response = fileCollection.get(pic_index).getName();
@@ -339,6 +345,9 @@ public class ServerActivity extends AppCompatActivity {
                         startSlideShow(secs);
                     }
                     else if (command.contains(RECEIVE_BYTES)) {
+                        System.out.println("receiving..");
+                        delay();
+                        System.out.println(new Date().toString());
                         byte[] receiveBytes = new byte[1500];
 
                         DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
