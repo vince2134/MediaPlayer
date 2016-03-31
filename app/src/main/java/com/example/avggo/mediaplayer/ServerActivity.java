@@ -183,6 +183,8 @@ public class ServerActivity extends AppCompatActivity {
 
         byte[] accumulatedBytes = new byte[0];
         int totalByteSize = 0;
+
+        ArrayList<byte[]> collectedBytes = new ArrayList<byte[]>();
         //private boolean slideShowStarted = false;
         //private Handler handler = new Handler();
         private Timer timer;
@@ -257,6 +259,7 @@ public class ServerActivity extends AppCompatActivity {
                         byte[] receiveBytes = new byte[2048];
                         DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
                         DatagramPacket ackPacket;
+
                         int prevSeqNo = -1;
 
                         try {
@@ -291,9 +294,9 @@ public class ServerActivity extends AppCompatActivity {
                         Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
 
                         byte[] byteChunk = receivedPacket.getData();
-                        byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
+                        //byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
 
-                        totalByteSize += receiveFragment.getLength();
+                        //totalByteSize += receiveFragment.getLength();
 
                         if (((receivedPacket.getSeqNo()-1) != prevSeqNo) && (prevSeqNo != -1)) {
                             Ack ack = new Ack(prevSeqNo);
@@ -307,11 +310,13 @@ public class ServerActivity extends AppCompatActivity {
                             serverSocket.send(new DatagramPacket(null, 0, receiveFragment.getAddress(), receiveFragment.getPort()));
                         }
 
+                        /*
                         System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
                         System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
 
                         accumulatedBytes = new byte[totalByteSize];
                         accumulatedBytes = tempBytes;
+                        */
 
                         prevSeqNo = receivedPacket.getSeqNo();
                     }

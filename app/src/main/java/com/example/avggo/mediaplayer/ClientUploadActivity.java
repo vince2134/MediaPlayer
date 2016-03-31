@@ -312,19 +312,11 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
-                    if (settings.getRandomLossProbability()) {
-                        generateToast("Packet lost!");
-                        System.out.println("Packet lost!");
-                        //System.out.println("Client: " + sendPacket.toString());
-                        continue;
-                    }
-
                     /*if (settings.getRandomLossProbability()) {
                         System.out.println("Packet lost!");
                         this.(settings.getDelay());
                         continue;
                     }*/
-
 
                     byteOStream.write(buffer, 0, readNum);
 
@@ -334,6 +326,15 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     packetCollection.add(packet);
 
+                    if (settings.getRandomLossProbability()) {
+                        generateToast("Packet lost!");
+                        System.out.println("Packet lost!");
+                        //System.out.println("Client: " + sendPacket.toString());
+
+                        currSeqNo++;
+                        continue;
+                    }
+
                     //command = "Receive Bytes";
                     command = ServerActivity.RECEIVE_BYTES;
 
@@ -342,7 +343,6 @@ public class ClientUploadActivity extends AppCompatActivity {
                     commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
                     sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
 
-
                     clientSocket.send(commandPacket); // command Server to Receive incoming bytes
                     clientSocket.send(sendPacket); // send bytes to Server
 
@@ -350,12 +350,20 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     clientSocket.receive(ackPacket);
 
+                    if (ackPacket.getData() != null) {
+                        Ack ack = (Ack) Converter.toObject(ackPacket.getData());
+
+                        ackCollection.add(ack);
+                    }
+
                     byteOStream.reset();
 
                     currSeqNo++;
                 }
             } catch (IOException ex) {
                 Log.d(TAG, "Error in converting file to bytes");
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
 
             byteOStream.close();
