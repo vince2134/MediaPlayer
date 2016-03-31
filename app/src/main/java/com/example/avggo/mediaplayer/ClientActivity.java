@@ -228,16 +228,11 @@ public class ClientActivity extends AppCompatActivity {
                 sendData = command.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(dstAddress), dstPort);
 
-<<<<<<< HEAD
-                if (!settings.getRandomLossProbability()) {
-/*                    Toast.makeText(getBaseContext(), "Packet lost!", Toast.LENGTH_SHORT).show();
-=======
                 if (!command.contains(ServerActivity.CONNECT) && settings.getRandomLossProbability()) {
                     generateToast("Packet lost!");
                     System.out.println("Packet lost!");
->>>>>>> 8e6eb20e2fdf074cc46632f1df40df3797d0c1d4
                     System.out.println(sendPacket.toString());
-                    return null;*/
+                    return null;
                 }
 
                 clientSocket.send(sendPacket);
@@ -245,14 +240,6 @@ public class ClientActivity extends AppCompatActivity {
 
 
                 Timer t = new Timer();
-<<<<<<< HEAD
-                t.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        // do stuff here
-                        if (!received) {
-//                            Toast.makeText(getBaseContext(), "Timeout!", Toast.LENGTH_SHORT).show();
-=======
                 if (!command.contains(ServerActivity.CONNECT)) {
                     t.schedule(new TimerTask() {
                         @Override
@@ -263,7 +250,6 @@ public class ClientActivity extends AppCompatActivity {
                                 System.out.println("Timeout!");
                                 generateToast("Timeout!");
                             }
->>>>>>> 8e6eb20e2fdf074cc46632f1df40df3797d0c1d4
                         }
                     }, settings.getTimeout());
                 }
