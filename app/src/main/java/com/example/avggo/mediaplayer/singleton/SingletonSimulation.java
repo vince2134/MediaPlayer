@@ -17,7 +17,7 @@ public abstract class SingletonSimulation {
 
     protected static void setToDefaultSettings() {
         lossProbability = 0;
-        timeout = 3;
+        timeout = 100;
         delay = 0;
         verbosity = 1;
     }

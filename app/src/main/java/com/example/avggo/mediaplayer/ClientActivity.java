@@ -193,9 +193,6 @@ public class ClientActivity extends AppCompatActivity {
             //Socket socket = null;
             SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
-
-
-
             DatagramSocket clientSocket;
             try {
                 clientSocket = new DatagramSocket();
@@ -205,8 +202,16 @@ public class ClientActivity extends AppCompatActivity {
                 sendData = command.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(dstAddress), dstPort);
 
-                if (!settings.getRandomLossProbability()) {
-                    Toast.makeText(getBaseContext(), "Packet lost!", Toast.LENGTH_SHORT).show();
+                if (!command.contains(ServerActivity.CONNECT) && settings.getRandomLossProbability()) {
+                    //Toast.makeText(getBaseContext(), "Packet lost!", Toast.LENGTH_SHORT).show();
+                    ClientActivity.this.runOnUiThread( new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getBaseContext(), "Packet lost!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                    System.out.println("Packet lost!");
                     System.out.println(sendPacket.toString());
                     return null;
                 }
@@ -214,23 +219,29 @@ public class ClientActivity extends AppCompatActivity {
                 clientSocket.send(sendPacket);
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
-                /*********************************
-                 * TODO                          *
-                 * Place count for timeout here! *
-                 *********************************/
                 Timer t = new Timer();
-                t.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        // do stuff here
-                        if (!received) {
-                            Toast.makeText(getBaseContext(), "Timeout!", Toast.LENGTH_SHORT).show();
+                if (!command.contains(ServerActivity.CONNECT)) {
+                    t.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            // do stuff here
+                            if (!received) {
+                                System.out.println("Timeout!");
+                                ClientActivity.this.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getBaseContext(), "Timeout!", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                                //
+                            }
                         }
-                    }
-                }, settings.getTimeout());
+                    }, settings.getTimeout());
+                }
 
                 clientSocket.receive(receivePacket);
                 received = true;
+                if (t != null)
                 t.cancel();
                 response = new String(receivePacket.getData());
                 //System.out.println(response + " Ey");
