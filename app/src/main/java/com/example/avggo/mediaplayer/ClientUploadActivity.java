@@ -286,7 +286,8 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     System.out.println("read " + readNum + " bytes,");
 
-                    command = "Receive Bytes";
+                    //command = "Receive Bytes";
+                    command = ServerActivity.RECEIVE_BYTES;
 
                     commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
                     sendPacket = new DatagramPacket(byteOStream.toByteArray(), byteOStream.toByteArray().length, ipAddr, dstPort);
@@ -302,11 +303,13 @@ public class ClientUploadActivity extends AppCompatActivity {
 
             byteOStream.close();
 
-            command = "Process File";
+            //command = "Process File";
+            command = ServerActivity.PROCESS_FILE;
             commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
             clientSocket.send(commandPacket);
 
-            command = "Restart Total Bytes";
+            //command = "Restart Total Bytes";
+            command = ServerActivity.RESTART_TOTAL_BYTES;
             commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
             clientSocket.send(commandPacket);
 
