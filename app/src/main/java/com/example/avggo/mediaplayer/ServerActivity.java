@@ -1,6 +1,7 @@
 package com.example.avggo.mediaplayer;
 
 import android.app.ActionBar.LayoutParams;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -20,8 +21,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher.ViewFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +47,10 @@ public class ServerActivity extends AppCompatActivity {
     DatagramSocket serverSocket;
     static int SocketServerPORT;
 
+    ProgressDialog progDialog;
+
     ArrayList<File> fileCollection = new ArrayList<File>();
+    ArrayList<InetAddress> connectedIPs = new ArrayList<>();
 
     //Hash Keys
     public static final String KEY_ADDRESS = "IP_Address";
@@ -55,13 +62,10 @@ public class ServerActivity extends AppCompatActivity {
     public static final String PREVIOUS = "Previous";
     public static final String SLIDESHOW = "Slideshow";
     public static final String RECEIVE_BYTES = "Receive Bytes";
-    public static final String RESTART_TOTAL_BYTES = "Restart Total Bytes";
     public static final String PROCESS_FILE = "Process File";
 
     public static final String LOCAL_APP_STORAGE = Environment.getExternalStorageDirectory() + "/Pictures/MediaPlayer/";
 
-    public static int IMAGE_COUNT;
-    public static final String FILENAME = "img";
     ImageSwitcher image;
 
     @Override
@@ -193,7 +197,11 @@ public class ServerActivity extends AppCompatActivity {
         private TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-               nextImage();
+                try {
+                    nextImage();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
         };
         private AssetManager assetManager = getAssets();
@@ -234,6 +242,9 @@ public class ServerActivity extends AppCompatActivity {
                         image.setOutAnimation(out);
 
                         InetAddress IPAddress = receivePacket.getAddress();
+
+                        connectedIPs.add(IPAddress);
+
                         int port = receivePacket.getPort();
                         String response = fileCollection.get(pic_index).getName();
                         sendData = response.getBytes();
@@ -274,22 +285,7 @@ public class ServerActivity extends AppCompatActivity {
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
 
-                        ServerActivity.this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
-                                image.setImageResource(resource);*/
-                                try {
-                                    FileInputStream in = new FileInputStream(fileCollection.get(pic_index));
-                                    Drawable d = Drawable.createFromStream(in, null);
-                                    Bitmap b = ((BitmapDrawable) d).getBitmap();
-                                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
-                                    image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
+                        nextImage();
                     }
                     else if(command.contains(NEXT)) {
 
@@ -355,12 +351,8 @@ public class ServerActivity extends AppCompatActivity {
 
                         accumulatedBytes = new byte[totalByteSize];
                         accumulatedBytes = tempBytes;
-                    }
-                    else if (command.contains(RESTART_TOTAL_BYTES)) { // set bytes back to default
-                        accumulatedBytes = new byte[0];
-                        totalByteSize = 0;
-                    }
-                    else if (command.contains(PROCESS_FILE)) {
+
+                    } else if (command.contains(PROCESS_FILE)) {
                         File processedFile = new File (LOCAL_APP_STORAGE, "img" + fileCollection.size() + ".jpg");
 
                         FileOutputStream fileOStream = new FileOutputStream(processedFile);
@@ -368,6 +360,9 @@ public class ServerActivity extends AppCompatActivity {
                         fileOStream.write(accumulatedBytes);
 
                         fileCollection.add(processedFile);
+
+                        accumulatedBytes = new byte[0];
+                        totalByteSize = 0;
 
                         fileOStream.close();
                     }
@@ -403,7 +398,7 @@ public class ServerActivity extends AppCompatActivity {
             }
         }
 
-        public void nextImage() {
+        public void nextImage() throws FileNotFoundException {
             ServerActivity.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -414,12 +409,52 @@ public class ServerActivity extends AppCompatActivity {
                         Bitmap b = ((BitmapDrawable)d).getBitmap();
                         Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
                         image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
+
+                        in.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             });
+            /*
+            String command = "";
+            int port = 0;
+            byte[] buffer = new byte[1500];
+
+            DatagramPacket commandPacket;
+            DatagramPacket sendPacket;
+
+            FileInputStream fileIStream = new FileInputStream(fileCollection.get(pic_index));
+            ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
+
+            try {
+                for (int readNum; (readNum = fileIStream.read(buffer)) != -1;) {
+                    byteOStream.write(buffer, 0, readNum);
+
+                    System.out.println("read " + readNum + " bytes,");
+
+                    port = Integer.parseInt(portNumber.getText().toString());
+
+                    //for (InetAddress ip : connectedIPs) {
+
+                        command = "Receive Bytes";
+                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, connectedIPs.get(0), port);
+                        sendPacket = new DatagramPacket(byteOStream.toByteArray(), byteOStream.toByteArray().length, connectedIPs.get(0), port);
+
+                        serverSocket.send(commandPacket);
+                        serverSocket.send(sendPacket);
+                    //}
+
+                    byteOStream.reset();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            */
+
         }
+
     }
 
     private String getIpAddress() {

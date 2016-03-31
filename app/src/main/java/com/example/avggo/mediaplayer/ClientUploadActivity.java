@@ -3,6 +3,7 @@ package com.example.avggo.mediaplayer;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +12,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
+import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
@@ -34,6 +36,8 @@ public class ClientUploadActivity extends AppCompatActivity {
 
     TextView filePath;
     Button chooseFileBtn, uploadBtn;
+
+    ProgressDialog progDialog;
 
     String ipAddress;
     int portNumber;
@@ -64,12 +68,21 @@ public class ClientUploadActivity extends AppCompatActivity {
         uploadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                UploadTask uploadTask = new UploadTask(ipAddress, portNumber, filePath.getText().toString());
+                UploadTask uploadTask = new UploadTask(ClientUploadActivity.this, ipAddress, portNumber, filePath.getText().toString());
                 uploadTask.execute();
 
-                finish();
+                //finish();
             }
         });
+    }
+
+    private void showDialog () {
+        progDialog = ProgressDialog.show(ClientUploadActivity.this, "", "Uploading File...", true);
+        progDialog.show();
+    }
+
+    private void dismissDialog () {
+        progDialog.dismiss();
     }
 
     private static final int FILE_SELECT_CODE = 0;
@@ -246,11 +259,13 @@ public class ClientUploadActivity extends AppCompatActivity {
         private String dstAddress;
         private int dstPort;
         private String fPath;
+        private Context context;
 
-        public UploadTask (String ipAddr, int port, String fPath) {
+        public UploadTask (Context c, String ipAddr, int port, String fPath) {
             dstAddress = ipAddr;
             dstPort = port;
             this.fPath = fPath;
+            context = c;
         }
 
         protected Void doInBackground (Void... arg0) {
@@ -280,7 +295,6 @@ public class ClientUploadActivity extends AppCompatActivity {
             ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
 
             try {
-
                 for (int readNum; (readNum = fileIStream.read(buffer)) != -1;) {
                     byteOStream.write(buffer, 0, readNum);
 
@@ -296,6 +310,8 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     byteOStream.reset();
                 }
+
+                fileIStream.close();
             } catch (IOException ex) {
                 Log.d(TAG, "Error in converting file to bytes");
             }
@@ -306,13 +322,24 @@ public class ClientUploadActivity extends AppCompatActivity {
             commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
             clientSocket.send(commandPacket);
 
-            command = "Restart Total Bytes";
-            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-            clientSocket.send(commandPacket);
-
             clientSocket.close();
 
             Log.d(TAG, "Sent");
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            ((ClientUploadActivity) context).showDialog();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            ((ClientUploadActivity) context).dismissDialog();
+            ((ClientUploadActivity) context).finish();
         }
     }
 }

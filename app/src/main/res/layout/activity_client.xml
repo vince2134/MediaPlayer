@@ -155,5 +155,12 @@
         android:layout_alignLeft="@+id/stopBtn"
         android:layout_alignStart="@+id/stopBtn" />
 
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/clientImgView"
+        android:layout_below="@+id/uploadBtn"
+        android:layout_centerHorizontal="true" />
+
 </RelativeLayout>
 

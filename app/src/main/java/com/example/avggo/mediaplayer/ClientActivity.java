@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,10 +25,12 @@ public class ClientActivity extends AppCompatActivity {
     TextView fileName;
     EditText slideShowLength;
     Button nextBtn, prevBtn, playBtn, stopBtn, uploadBtn, simulateBtn;
-    //ImageView image;
+    ImageView imageView;
 
     String ipAddress;
     int portNumber;
+
+    public static final String RECEIVE_BYTES = "Receive Bytes";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +57,7 @@ public class ClientActivity extends AppCompatActivity {
         portNumber = getIntent().getIntExtra(ServerActivity.KEY_PORT, 0);
 
         fileName = (TextView) findViewById(R.id.fileNameText);
+        imageView = (ImageView) findViewById(R.id.clientImgView);
         slideShowLength = (EditText) findViewById(R.id.slideShowPauseEditText);
 
         prevBtn = (Button) findViewById(R.id.prevBtn);
@@ -180,6 +184,9 @@ public class ClientActivity extends AppCompatActivity {
         private String response = "";
         private String command;
 
+        private byte[] accumulatedBytes = new byte[0];
+        private int totalByteSize = 0;
+
         private boolean received = false;
         ClientTask(String addr, int port, String command){
             dstAddress = addr;
@@ -189,14 +196,9 @@ public class ClientActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... arg0) {
+            //SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
-            //Socket socket = null;
-            SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
-
-
-
-
-            DatagramSocket clientSocket;
+            final DatagramSocket clientSocket;
             try {
                 clientSocket = new DatagramSocket();
                 byte[] sendData;
@@ -205,20 +207,20 @@ public class ClientActivity extends AppCompatActivity {
                 sendData = command.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(dstAddress), dstPort);
 
+                /*
                 if (!settings.getRandomLossProbability()) {
                     Toast.makeText(getBaseContext(), "Packet lost!", Toast.LENGTH_SHORT).show();
                     System.out.println(sendPacket.toString());
                     return null;
-                }
+                }*/
+
 
                 clientSocket.send(sendPacket);
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
-                /*********************************
-                 * TODO                          *
-                 * Place count for timeout here! *
-                 *********************************/
+                /*
                 Timer t = new Timer();
+
                 t.schedule(new TimerTask() {
                     @Override
                     public void run() {
@@ -228,22 +230,52 @@ public class ClientActivity extends AppCompatActivity {
                         }
                     }
                 }, settings.getTimeout());
+                */
 
                 clientSocket.receive(receivePacket);
                 received = true;
-                t.cancel();
+                //t.cancel();
                 response = new String(receivePacket.getData());
+
+                //clientSocket.close();
                 //System.out.println(response + " Ey");
 
                 ClientActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        setFileName(response);
+                        if (!response.contains(RECEIVE_BYTES))
+                            setFileName(response);
                     }
                 });
+
+                while (response.contains(RECEIVE_BYTES)) {
+                    byte[] receiveBytes = new byte[1500];
+
+                    DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
+
+                    try {
+                        clientSocket.receive(receiveFragment);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    byte[] byteChunk = receiveFragment.getData();
+                    byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
+
+                    totalByteSize += receiveFragment.getLength();
+
+                    System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
+                    System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
+
+                    accumulatedBytes = new byte[totalByteSize];
+                    accumulatedBytes = tempBytes;
+                }
+
+                    System.out.println("Client recieves Total Bytes Received: " + accumulatedBytes.length);
+
             } catch (IOException e) {
                 e.printStackTrace();
-                Toast.makeText(getBaseContext(), "Could not connect to server.", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getBaseContext(), "Could not connect to server.", Toast.LENGTH_SHORT).show();
                 finish();
 
             }
