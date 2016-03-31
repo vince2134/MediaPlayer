@@ -20,6 +20,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher.ViewFactory;
 
+import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -32,6 +34,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -120,7 +123,7 @@ public class ServerActivity extends AppCompatActivity {
         });
     }
 
-    private void exportAssetImages(){
+    private void exportAssetImages() {
         AssetManager assetManager = getAssets();
 
         String[] files = null;
@@ -145,7 +148,7 @@ public class ServerActivity extends AppCompatActivity {
 
                 int read;
 
-                while((read = IStream.read(buffer)) != -1){
+                while ((read = IStream.read(buffer)) != -1) {
                     OStream.write(buffer, 0, read);
                 }
 
@@ -153,9 +156,7 @@ public class ServerActivity extends AppCompatActivity {
 
             } catch (IOException ex) {
 
-            }
-
-            finally {
+            } finally {
                 if (IStream != null) {
                     try {
                         IStream.close();
@@ -193,7 +194,7 @@ public class ServerActivity extends AppCompatActivity {
         private TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-               nextImage();
+                nextImage();
             }
         };
         private AssetManager assetManager = getAssets();
@@ -212,6 +213,7 @@ public class ServerActivity extends AppCompatActivity {
                 byte[] receiveData = new byte[1024];
                 byte[] sendData;
                 assetManager = getAssets();
+                SingletonServerSimulation settings = SingletonServerSimulation.getInstance();
 
                 ServerActivity.this.runOnUiThread(new Runnable() {
 
@@ -222,12 +224,14 @@ public class ServerActivity extends AppCompatActivity {
                     }
                 });
 
+                Timer t = new Timer();
+
                 while (true) {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                     serverSocket.receive(receivePacket);
                     String command = new String(receivePacket.getData());
 
-                    if(command.contains(CONNECT)) {
+                    if (command.contains(CONNECT)) {
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_in);
                         Animation out = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_out);
                         image.setInAnimation(in);
@@ -257,7 +261,7 @@ public class ServerActivity extends AppCompatActivity {
                             }
                         });
                     }
-                    else if(command.contains(PREVIOUS)) {
+                    else if (command.contains(PREVIOUS)) {
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.slide_in_left);
                         Animation out = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.slide_out_right);
                         image.setInAnimation(in);
@@ -291,7 +295,7 @@ public class ServerActivity extends AppCompatActivity {
                             }
                         });
                     }
-                    else if(command.contains(NEXT)) {
+                    else if (command.contains(NEXT)) {
 
                         /*ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
@@ -318,7 +322,7 @@ public class ServerActivity extends AppCompatActivity {
                         image.setOutAnimation(out);
 
                         pic_index++;
-                        if(pic_index == fileCollection.size())
+                        if (pic_index == fileCollection.size())
                             pic_index = 0;
 
                         InetAddress IPAddress = receivePacket.getAddress();
@@ -330,7 +334,7 @@ public class ServerActivity extends AppCompatActivity {
 
                         nextImage();
                     }
-                    else if(command.contains(SLIDESHOW)) {
+                    else if (command.contains(SLIDESHOW)) {
                         String secsString = new String(command.split("_")[1]);
                         int secs = Integer.parseInt(secsString) * 1000;
 
@@ -339,11 +343,17 @@ public class ServerActivity extends AppCompatActivity {
                         startSlideShow(secs);
                     }
                     else if (command.contains(RECEIVE_BYTES)) {
+                        System.out.println(new Date().toString());
+                        this.sleep(settings.getDelay());
                         byte[] receiveBytes = new byte[1500];
 
                         DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
 
-                        serverSocket.receive(receiveFragment);
+                        try {
+                            serverSocket.receive(receiveFragment);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
 
                         byte[] byteChunk = receiveFragment.getData();
                         byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
@@ -361,7 +371,7 @@ public class ServerActivity extends AppCompatActivity {
                         totalByteSize = 0;
                     }
                     else if (command.contains(PROCESS_FILE)) {
-                        File processedFile = new File (LOCAL_APP_STORAGE, "img" + fileCollection.size() + ".jpg");
+                        File processedFile = new File(LOCAL_APP_STORAGE, "img" + fileCollection.size() + ".jpg");
 
                         FileOutputStream fileOStream = new FileOutputStream(processedFile);
 
@@ -373,6 +383,8 @@ public class ServerActivity extends AppCompatActivity {
                     }
                 }
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -411,7 +423,7 @@ public class ServerActivity extends AppCompatActivity {
                     try {
                         FileInputStream in = new FileInputStream(fileCollection.get(pic_index));
                         Drawable d = Drawable.createFromStream(in, null);
-                        Bitmap b = ((BitmapDrawable)d).getBitmap();
+                        Bitmap b = ((BitmapDrawable) d).getBitmap();
                         Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
                         image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
                     } catch (IOException e) {
