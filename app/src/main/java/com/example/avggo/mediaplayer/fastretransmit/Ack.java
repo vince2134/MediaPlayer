@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Created by patricktobias on 3/31/16.
  */
-public class Ack implements Serializable {
+public class Ack implements Serializable{
     private int packetNo;
 
     public Ack (int packetNo) {
@@ -19,5 +19,9 @@ public class Ack implements Serializable {
 
     public void setPacketNo(int packetNo) {
         this.packetNo = packetNo;
+    }
+
+    public String toString () {
+        return "ack" + packetNo;
     }
 }

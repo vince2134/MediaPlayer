@@ -21,6 +21,10 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.avggo.mediaplayer.fastretransmit.Ack;
+import com.example.avggo.mediaplayer.fastretransmit.Converter;
+import com.example.avggo.mediaplayer.fastretransmit.Packet;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,6 +33,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.ArrayList;
 
 public class ClientUploadActivity extends AppCompatActivity {
 
@@ -257,7 +262,7 @@ public class ClientUploadActivity extends AppCompatActivity {
             try {
                 InetAddress IPAddress = InetAddress.getByName(dstAddress);
 
-                splitAndSendFile(new File(fPath), IPAddress, dstPort);
+                sendFile(new File(fPath), IPAddress, dstPort);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -267,14 +272,22 @@ public class ClientUploadActivity extends AppCompatActivity {
         }
 
         @TargetApi(Build.VERSION_CODES.KITKAT)
-        private void splitAndSendFile(File f, InetAddress ipAddr, int dstPort) throws IOException {
+        private void sendFile(File f, InetAddress ipAddr, int dstPort) throws IOException {
             DatagramSocket clientSocket;
             clientSocket = new DatagramSocket();
 
+            int currSeqNo = 0;
+
+            ArrayList<Packet> packetCollection = new ArrayList<Packet>();
+            ArrayList<Ack> ackCollection = new ArrayList<Ack>();
+
             String command = "";
+            Packet packet;
             DatagramPacket sendPacket;
             DatagramPacket commandPacket;
+            DatagramPacket ackPacket;
             byte[] buffer = new byte[1500];
+            byte[] receivedAck = new byte[1024];
 
             FileInputStream fileIStream = new FileInputStream(f);
             ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
@@ -286,16 +299,28 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     System.out.println("read " + readNum + " bytes,");
 
+                    packet = new Packet (currSeqNo, byteOStream.toByteArray());
+
+                    packetCollection.add(packet);
+
                     //command = "Receive Bytes";
                     command = ServerActivity.RECEIVE_BYTES;
 
-                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                    sendPacket = new DatagramPacket(byteOStream.toByteArray(), byteOStream.toByteArray().length, ipAddr, dstPort);
+                    byte[] sendData = Converter.toBytes(packet);
 
-                    clientSocket.send(commandPacket);
-                    clientSocket.send(sendPacket);
+                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+                    sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
+
+                    clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+                    clientSocket.send(sendPacket); // send bytes to Server
+
+                    ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
+
+                    clientSocket.receive(ackPacket);
 
                     byteOStream.reset();
+
+                    currSeqNo++;
                 }
             } catch (IOException ex) {
                 Log.d(TAG, "Error in converting file to bytes");
