@@ -231,7 +231,7 @@ public class ClientActivity extends AppCompatActivity {
                 if (!command.contains(ServerActivity.CONNECT) && settings.getRandomLossProbability()) {
                     generateToast("Packet lost!");
                     System.out.println("Packet lost!");
-                    System.out.println(sendPacket.toString());
+                    System.out.println("Client: " + sendPacket.toString());
                     return null;
                 }
 
@@ -256,6 +256,7 @@ public class ClientActivity extends AppCompatActivity {
 
                 if (timedOut) {
                     // Resend?
+                    executeCommand(command);
                     return null;
                 }
 
