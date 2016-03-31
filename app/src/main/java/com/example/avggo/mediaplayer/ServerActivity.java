@@ -237,6 +237,9 @@ public class ServerActivity extends AppCompatActivity {
                         image.setInAnimation(in);
                         image.setOutAnimation(out);
 
+                        for(int i = 0; i < fileCollection.size(); i++)
+                            System.out.println(fileCollection.get(i).getName());
+
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
                         String response = fileCollection.get(pic_index).getName();
@@ -343,8 +346,14 @@ public class ServerActivity extends AppCompatActivity {
                         startSlideShow(secs);
                     }
                     else if (command.contains(RECEIVE_BYTES)) {
+<<<<<<< HEAD
                         System.out.println(new Date().toString());
                         this.sleep(settings.getDelay());
+=======
+                        System.out.println("receiving..");
+                        delay();
+                        System.out.println(new Date().toString());
+>>>>>>> cc0f44b5e44e5feed3cc7e942592876b61568f30
                         byte[] receiveBytes = new byte[1500];
 
                         DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);

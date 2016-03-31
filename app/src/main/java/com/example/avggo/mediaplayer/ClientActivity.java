@@ -45,8 +45,9 @@ public class ClientActivity extends AppCompatActivity {
     }
 
     private void connectToServer() {
-        ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.CONNECT);
-        clientTask.execute();
+        /*ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.CONNECT);
+        clientTask.execute();*/
+        executeCommand(ServerActivity.CONNECT);
     }
 
     private void initializeHandlers() {
@@ -67,18 +68,20 @@ public class ClientActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
-                stopSlideShow();
+                /*stopSlideShow();
                 ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.PREVIOUS);
-                clientTask.execute();
+                clientTask.execute();*/
+                executeCommand(ServerActivity.PREVIOUS);
             }
         });
 
         nextBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                stopSlideShow();
+                /*stopSlideShow();
                 ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.NEXT);
-                clientTask.execute();
+                clientTask.execute();*/
+                executeCommand(ServerActivity.NEXT);
             }
         });
 
@@ -107,8 +110,6 @@ public class ClientActivity extends AppCompatActivity {
                 }
 
                 if (secs > 0) {
-                    /*ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.SLIDESHOW + "_" + secs + "_");
-                    clientTask.execute();*/
                     startSlideShow(secs * 1000);
                 } else {
                     Toast.makeText(getBaseContext(), "Input valid pause length!", Toast.LENGTH_SHORT).show();
@@ -131,6 +132,22 @@ public class ClientActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    private void executeCommand(String command) {
+        final String task = command;
+        stopSlideShow();
+        SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ClientTask clientTask = new ClientTask(ipAddress, portNumber, task);
+                clientTask.execute();
+                System.out.println("TASK EXECUTED");
+            }
+        }, settings.getDelay());
+
     }
 
     private Timer timer;
@@ -158,8 +175,6 @@ public class ClientActivity extends AppCompatActivity {
     }
 
     public void stopSlideShow() {
-            /*slideShowStarted = false;
-            handler.removeCallbacks(nextImageRunnable);*/
         if (timer != null) {
             timer.cancel();
             timer = null;
