@@ -62,9 +62,6 @@ public class ServerActivity extends AppCompatActivity {
     public static final String PROCESS_FILE = "Process File";
 
     public static final String LOCAL_APP_STORAGE = Environment.getExternalStorageDirectory() + "/Pictures/MediaPlayer/";
-
-    public static int IMAGE_COUNT;
-    public static final String FILENAME = "img";
     ImageSwitcher image;
 
     private boolean timedOut = false;
@@ -76,14 +73,6 @@ public class ServerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_server);
 
         exportAssetImages();
-
-        //System.out.println (fileCollection.size());
-
-        /*
-        for (File f : fileCollection) {
-            System.out.println (f.getPath());
-        }
-        */
 
         info = (TextView) findViewById(R.id.info);
         infoip = (TextView) findViewById(R.id.infoip);
@@ -324,8 +313,6 @@ public class ServerActivity extends AppCompatActivity {
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
-                                image.setImageResource(resource);*/
                                 try {
                                     FileInputStream in = new FileInputStream(fileCollection.get(pic_index));
                                     Drawable d = Drawable.createFromStream(in, null);
@@ -358,8 +345,6 @@ public class ServerActivity extends AppCompatActivity {
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                /*int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
-                                image.setImageResource(resource);*/
                                 try {
                                     FileInputStream in = new FileInputStream(fileCollection.get(pic_index));
                                     Drawable d = Drawable.createFromStream(in, null);
@@ -374,25 +359,6 @@ public class ServerActivity extends AppCompatActivity {
                     }
                     else if (command.contains(NEXT)) {
 
-                        /*ServerActivity.this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                /*pic_index++;
-                                if(pic_index == fileList.length - 4)
-                                    pic_index = 1;
-                                //int resource = getResources().getIdentifier(FILENAME + pic_index, "drawable", getPackageName());
-                                //image.setImageResource(resource);
-                                try {
-                                    InputStream in = assetManager.open(fileList[pic_index]);
-                                    Drawable d = Drawable.createFromStream(in, null);
-                                    Bitmap b = ((BitmapDrawable)d).getBitmap();
-                                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
-                                    image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        })*/
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), R.anim.slide_in_right);
                         Animation out = AnimationUtils.loadAnimation(getBaseContext(), R.anim.slide_out_left);
                         image.setInAnimation(in);
