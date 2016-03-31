@@ -5,7 +5,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
 import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
@@ -34,7 +33,7 @@ public class ServerSimulationActivity extends AppCompatActivity {
         btnSave = (Button) findViewById(R.id.saveButton);
         btnCancel = (Button) findViewById(R.id.cancelButton);
 
-        RadioButton button;
+        /*RadioButton button;
 
         button = new RadioButton(this);
         button.setText("Level 1");
@@ -47,6 +46,8 @@ public class ServerSimulationActivity extends AppCompatActivity {
         button = new RadioButton(this);
         button.setText("Level 3");
         rgVerbosity.addView(button);
+
+        rgVerbosity.check(0);*/
 
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
