@@ -67,6 +67,9 @@ public class ServerActivity extends AppCompatActivity {
     public static final String FILENAME = "img";
     ImageSwitcher image;
 
+    private boolean timedOut = false;
+    private boolean received = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -215,6 +218,7 @@ public class ServerActivity extends AppCompatActivity {
                 assetManager = getAssets();
                 SingletonServerSimulation settings = SingletonServerSimulation.getInstance();
 
+
                 ServerActivity.this.runOnUiThread(new Runnable() {
 
                     @Override
@@ -223,8 +227,6 @@ public class ServerActivity extends AppCompatActivity {
                                 + serverSocket.getLocalPort());
                     }
                 });
-
-                Timer t = new Timer();
 
                 while (true) {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
@@ -346,29 +348,58 @@ public class ServerActivity extends AppCompatActivity {
                         startSlideShow(secs);
                     }
                     else if (command.contains(RECEIVE_BYTES)) {
-                        System.out.println(new Date().toString());
-                        this.sleep(settings.getDelay());
+                        if(!settings.getRandomLossProbability()) {
+                            System.out.println(new Date().toString());
+                            this.sleep(settings.getDelay());
 
-                        byte[] receiveBytes = new byte[1500];
+                            byte[] receiveBytes = new byte[1500];
 
-                        DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
+                            DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
 
-                        try {
-                            serverSocket.receive(receiveFragment);
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                            try {
+                                Timer t = new Timer();
+                                t.schedule(new TimerTask() {
+                                    @Override
+                                    public void run() {
+                                        // do stuff here
+                                        if (!received) {
+                                            timedOut = true;
+                                            System.out.println("Timeout!");
+                                            generateToast("Timeout!");
+                                        }
+                                    }
+                                }, settings.getTimeout());
+
+                                if (timedOut) {
+                                    // Resend?
+
+                                }
+
+                                serverSocket.receive(receiveFragment);
+
+                                received = true;
+                                if (t != null) {
+                                    t.cancel();
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                            byte[] byteChunk = receiveFragment.getData();
+                            byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
+
+                            totalByteSize += receiveFragment.getLength();
+
+                            System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
+                            System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
+
+                            accumulatedBytes = new byte[totalByteSize];
+                            accumulatedBytes = tempBytes;
                         }
-
-                        byte[] byteChunk = receiveFragment.getData();
-                        byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
-
-                        totalByteSize += receiveFragment.getLength();
-
-                        System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
-                        System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
-
-                        accumulatedBytes = new byte[totalByteSize];
-                        accumulatedBytes = tempBytes;
+                        else{
+                            generateToast("Packet lost!");
+                            System.out.println("Packet lost!");
+                        }
                     }
                     else if (command.contains(RESTART_TOTAL_BYTES)) { // set bytes back to default
                         accumulatedBytes = new byte[0];
@@ -391,6 +422,16 @@ public class ServerActivity extends AppCompatActivity {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+
+        private void generateToast(String message) {
+            final String text = message;
+            ServerActivity.this.runOnUiThread( new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
+                }
+            });
         }
 
         public void startSlideShow(int secs) {
