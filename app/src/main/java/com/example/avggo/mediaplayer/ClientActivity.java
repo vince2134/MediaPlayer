@@ -173,6 +173,16 @@ public class ClientActivity extends AppCompatActivity {
         this.fileName.setText(fileName);
     }
 
+    private void generateToast(String message) {
+        final String text = message;
+        ClientActivity.this.runOnUiThread( new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     class ClientTask extends AsyncTask<Void, Void, Void> {
 
         private String dstAddress;
@@ -180,6 +190,7 @@ public class ClientActivity extends AppCompatActivity {
         private String response = "";
         private String command;
 
+        private boolean timedOut = false;
         private boolean received = false;
         ClientTask(String addr, int port, String command){
             dstAddress = addr;
@@ -193,9 +204,6 @@ public class ClientActivity extends AppCompatActivity {
             //Socket socket = null;
             SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
-
-
-
             DatagramSocket clientSocket;
             try {
                 clientSocket = new DatagramSocket();
@@ -205,8 +213,14 @@ public class ClientActivity extends AppCompatActivity {
                 sendData = command.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(dstAddress), dstPort);
 
+<<<<<<< HEAD
                 if (!settings.getRandomLossProbability()) {
 /*                    Toast.makeText(getBaseContext(), "Packet lost!", Toast.LENGTH_SHORT).show();
+=======
+                if (!command.contains(ServerActivity.CONNECT) && settings.getRandomLossProbability()) {
+                    generateToast("Packet lost!");
+                    System.out.println("Packet lost!");
+>>>>>>> 8e6eb20e2fdf074cc46632f1df40df3797d0c1d4
                     System.out.println(sendPacket.toString());
                     return null;*/
                 }
@@ -214,24 +228,41 @@ public class ClientActivity extends AppCompatActivity {
                 clientSocket.send(sendPacket);
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
-                /*********************************
-                 * TODO                          *
-                 * Place count for timeout here! *
-                 *********************************/
+
                 Timer t = new Timer();
+<<<<<<< HEAD
                 t.schedule(new TimerTask() {
                     @Override
                     public void run() {
                         // do stuff here
                         if (!received) {
 //                            Toast.makeText(getBaseContext(), "Timeout!", Toast.LENGTH_SHORT).show();
+=======
+                if (!command.contains(ServerActivity.CONNECT)) {
+                    t.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            // do stuff here
+                            if (!received) {
+                                timedOut = true;
+                                System.out.println("Timeout!");
+                                generateToast("Timeout!");
+                            }
+>>>>>>> 8e6eb20e2fdf074cc46632f1df40df3797d0c1d4
                         }
-                    }
-                }, settings.getTimeout());
+                    }, settings.getTimeout());
+                }
+
+                if (timedOut) {
+                    // Resend?
+                    return null;
+                }
 
                 clientSocket.receive(receivePacket);
                 received = true;
-                t.cancel();
+                if (t != null) {
+                    t.cancel();
+                }
                 response = new String(receivePacket.getData());
                 //System.out.println(response + " Ey");
 
@@ -243,7 +274,8 @@ public class ClientActivity extends AppCompatActivity {
                 });
             } catch (IOException e) {
                 e.printStackTrace();
-                Toast.makeText(getBaseContext(), "Could not connect to server.", Toast.LENGTH_SHORT).show();
+                generateToast("Could not connect to server");
+                //Toast.makeText(getBaseContext(), "Could not connect to server.", Toast.LENGTH_SHORT).show();
                 finish();
 
             }
