@@ -23,7 +23,7 @@ public class ClientActivity extends AppCompatActivity {
 
     TextView fileName;
     EditText slideShowLength;
-    Button nextBtn, prevBtn, playBtn, stopBtn, uploadBtn, simulateBtn;
+    Button nextBtn, prevBtn, slideshowBtn, stopBtn, uploadBtn, simulateBtn;
     //ImageView image;
 
     String ipAddress;
@@ -58,7 +58,7 @@ public class ClientActivity extends AppCompatActivity {
         slideShowLength = (EditText) findViewById(R.id.slideShowPauseEditText);
 
         prevBtn = (Button) findViewById(R.id.prevBtn);
-        playBtn = (Button) findViewById(R.id.playBtn);
+        slideshowBtn = (Button) findViewById(R.id.slideshowBtn);
         nextBtn = (Button) findViewById(R.id.nextBtn);
         stopBtn = (Button) findViewById(R.id.stopBtn);
         uploadBtn = (Button) findViewById(R.id.uploadBtn);
@@ -99,7 +99,7 @@ public class ClientActivity extends AppCompatActivity {
             }
         });
 
-        playBtn.setOnClickListener(new View.OnClickListener() {
+        slideshowBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 int secs;
