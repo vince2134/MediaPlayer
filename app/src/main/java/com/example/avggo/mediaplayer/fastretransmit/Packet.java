@@ -41,6 +41,7 @@ public class Packet implements Serializable {
 
     public void setLast (boolean alst) {
         this.last = last;
+        //hoho
     }
 
     @Override
