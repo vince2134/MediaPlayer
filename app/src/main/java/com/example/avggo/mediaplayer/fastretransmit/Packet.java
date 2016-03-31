@@ -13,7 +13,6 @@ public class Packet implements Serializable {
     private boolean last;
 
     public Packet (int seqNo, byte[] data, boolean last) {
-        super();
         this.seqNo = seqNo;
         this.data = data;
         this.last = last;
@@ -39,9 +38,8 @@ public class Packet implements Serializable {
         this.data = data;
     }
 
-    public void setLast (boolean alst) {
+    public void setLast (boolean last) {
         this.last = last;
-        //hoho
     }
 
     @Override
