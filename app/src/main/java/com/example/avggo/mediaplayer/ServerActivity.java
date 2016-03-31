@@ -233,13 +233,85 @@ public class ServerActivity extends AppCompatActivity {
                     serverSocket.receive(receivePacket);
                     String command = new String(receivePacket.getData());
 
-                    if (command.contains(CONNECT)) {
+
+
+                    if (command.contains(RESTART_TOTAL_BYTES)) { // set bytes back to default
+                        accumulatedBytes = new byte[0];
+                        totalByteSize = 0;
+                    }
+                    else if (command.contains(PROCESS_FILE)) {
+                        File processedFile = new File(LOCAL_APP_STORAGE, "img" + fileCollection.size() + ".jpg");
+
+                        FileOutputStream fileOStream = new FileOutputStream(processedFile);
+
+                        fileOStream.write(accumulatedBytes);
+
+                        fileCollection.add(processedFile);
+
+                        fileOStream.close();
+                    }
+
+                    if (settings.getRandomLossProbability()) {
+                        System.out.println("Packet lost!");
+                        this.sleep(settings.getDelay());
+                        continue;
+                    }
+
+                    else if (command.contains(RECEIVE_BYTES)) {
+                        this.sleep(settings.getDelay());
+
+                        System.out.println(new Date().toString());
+
+                        byte[] receiveBytes = new byte[1500];
+                        DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
+
+                        try {
+                            Timer t = new Timer();
+                            t.schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    // do stuff here
+                                    if (!received) {
+                                        timedOut = true;
+                                        System.out.println("Timeout!");
+                                        generateToast("Timeout!");
+                                    }
+                                }
+                            }, settings.getTimeout());
+
+                            if (timedOut) {
+                                // Resend?
+
+                            }
+
+                            serverSocket.receive(receiveFragment);
+
+                            received = true;
+                            if (t != null) {
+                                t.cancel();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        byte[] byteChunk = receiveFragment.getData();
+                        byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
+
+                        totalByteSize += receiveFragment.getLength();
+
+                        System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
+                        System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
+
+                        accumulatedBytes = new byte[totalByteSize];
+                        accumulatedBytes = tempBytes;
+                    }
+                    else if (command.contains(CONNECT)) {
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_in);
                         Animation out = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_out);
                         image.setInAnimation(in);
                         image.setOutAnimation(out);
 
-                        for(int i = 0; i < fileCollection.size(); i++)
+                        for (int i = 0; i < fileCollection.size(); i++)
                             System.out.println(fileCollection.get(i).getName());
 
                         InetAddress IPAddress = receivePacket.getAddress();
@@ -347,75 +419,7 @@ public class ServerActivity extends AppCompatActivity {
 
                         startSlideShow(secs);
                     }
-                    else if (command.contains(RECEIVE_BYTES)) {
-                        if(!settings.getRandomLossProbability()) {
-                            System.out.println(new Date().toString());
-                            this.sleep(settings.getDelay());
 
-                            byte[] receiveBytes = new byte[1500];
-
-                            DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
-
-                            try {
-                                Timer t = new Timer();
-                                t.schedule(new TimerTask() {
-                                    @Override
-                                    public void run() {
-                                        // do stuff here
-                                        if (!received) {
-                                            timedOut = true;
-                                            System.out.println("Timeout!");
-                                            generateToast("Timeout!");
-                                        }
-                                    }
-                                }, settings.getTimeout());
-
-                                if (timedOut) {
-                                    // Resend?
-
-                                }
-
-                                serverSocket.receive(receiveFragment);
-
-                                received = true;
-                                if (t != null) {
-                                    t.cancel();
-                                }
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-
-                            byte[] byteChunk = receiveFragment.getData();
-                            byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
-
-                            totalByteSize += receiveFragment.getLength();
-
-                            System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
-                            System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
-
-                            accumulatedBytes = new byte[totalByteSize];
-                            accumulatedBytes = tempBytes;
-                        }
-                        else{
-                            generateToast("Packet lost!");
-                            System.out.println("Packet lost!");
-                        }
-                    }
-                    else if (command.contains(RESTART_TOTAL_BYTES)) { // set bytes back to default
-                        accumulatedBytes = new byte[0];
-                        totalByteSize = 0;
-                    }
-                    else if (command.contains(PROCESS_FILE)) {
-                        File processedFile = new File(LOCAL_APP_STORAGE, "img" + fileCollection.size() + ".jpg");
-
-                        FileOutputStream fileOStream = new FileOutputStream(processedFile);
-
-                        fileOStream.write(accumulatedBytes);
-
-                        fileCollection.add(processedFile);
-
-                        fileOStream.close();
-                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -426,7 +430,7 @@ public class ServerActivity extends AppCompatActivity {
 
         private void generateToast(String message) {
             final String text = message;
-            ServerActivity.this.runOnUiThread( new Runnable() {
+            ServerActivity.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
