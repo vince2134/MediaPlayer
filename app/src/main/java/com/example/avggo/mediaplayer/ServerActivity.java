@@ -190,6 +190,7 @@ public class ServerActivity extends AppCompatActivity {
 
         byte[] accumulatedBytes = new byte[0];
         int totalByteSize = 0;
+        Ack ack = new Ack(-1);
 
         ArrayList<Packet> collectedPackets = new ArrayList<Packet>();
         //private boolean slideShowStarted = false;
@@ -219,6 +220,8 @@ public class ServerActivity extends AppCompatActivity {
                 assetManager = getAssets();
                 SingletonServerSimulation settings = SingletonServerSimulation.getInstance();
 
+                int prevSeqNo = -1;
+
 
                 ServerActivity.this.runOnUiThread(new Runnable() {
 
@@ -233,8 +236,6 @@ public class ServerActivity extends AppCompatActivity {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                     serverSocket.receive(receivePacket);
                     String command = new String(receivePacket.getData());
-
-
 
                     if (command.contains(RESTART_TOTAL_BYTES)) { // set bytes back to default
                         collectedPackets.clear();
@@ -266,6 +267,8 @@ public class ServerActivity extends AppCompatActivity {
                         fileCollection.add(processedFile);
 
                         fileOStream.close();
+
+                        prevSeqNo = -1;
                     }
 
                     if (settings.getRandomLossProbability()) {
@@ -282,8 +285,6 @@ public class ServerActivity extends AppCompatActivity {
                         byte[] receiveBytes = new byte[2048];
                         DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
                         DatagramPacket ackPacket;
-
-                        int prevSeqNo = -1;
 
                         try {
                             Timer t = new Timer();
@@ -315,11 +316,12 @@ public class ServerActivity extends AppCompatActivity {
                         }
 
                         Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
-
-                        Ack ack;
+;
                         if (((receivedPacket.getSeqNo()-1) != prevSeqNo) && (prevSeqNo != -1)) {
                             ack = new Ack(prevSeqNo);
-                        } else {
+                        }
+
+                        if (receivedPacket.getSeqNo() == ack.getPacketNo()) {
                             ack = new Ack(-1);
                         }
 
