@@ -37,6 +37,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -327,7 +328,9 @@ public class ClientUploadActivity extends AppCompatActivity {
             }
 
             try {
-                for (Packet p : packetCollection) {
+                for (int i = 0; i < packetCollection.size(); i++) {
+                //for (Packet p : packetCollection) {
+                    Packet p = packetCollection.get(i);
                     SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
                     /*if (settings.getRandomLossProbability()) {
@@ -339,6 +342,7 @@ public class ClientUploadActivity extends AppCompatActivity {
                     if (settings.getRandomLossProbability()) {
                         generateToast("Packet lost!");
                         System.out.println("Packet lost!");
+                        i--;
                         //System.out.println("Client: " + sendPacket.toString());
                         //continue;
                     } else {
@@ -356,6 +360,10 @@ public class ClientUploadActivity extends AppCompatActivity {
                             sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
 
                             clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+
+                            Packet sp = (Packet) Converter.toObject(lostPacket);
+                            System.out.println ("[" + new Date().toString() + "] Lost packet with sequence number: " + (sp.getSeqNo()-1));
+
                             clientSocket.send(sendPacket); // send bytes to Server
 
                             //System.out.println("Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
@@ -382,7 +390,7 @@ public class ClientUploadActivity extends AppCompatActivity {
                         clientSocket.send(commandPacket); // command Server to Receive incoming bytes
                         clientSocket.send(sendPacket); // send bytes to Server
 
-                        //System.out.println("Client sent packet with seqno" + p.getSeqNo());
+                        System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + p.getSeqNo());
 
                         ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
 
