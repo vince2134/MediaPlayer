@@ -79,6 +79,13 @@ public class ServerActivity extends AppCompatActivity {
 
         exportAssetImages();
 
+        File localFolder = new File (LOCAL_APP_STORAGE);
+        File[] listOfFiles = localFolder.listFiles();
+
+        for (File f : listOfFiles) {
+            fileCollection.add(f);
+        }
+
         info = (TextView) findViewById(R.id.info);
         infoip = (TextView) findViewById(R.id.infoip);
         msg = (TextView) findViewById(R.id.msg);
@@ -148,8 +155,6 @@ public class ServerActivity extends AppCompatActivity {
                 while ((read = IStream.read(buffer)) != -1) {
                     OStream.write(buffer, 0, read);
                 }
-
-                fileCollection.add(OFile);
 
             } catch (IOException ex) {
 

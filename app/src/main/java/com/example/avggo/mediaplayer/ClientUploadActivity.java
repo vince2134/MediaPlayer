@@ -319,6 +319,8 @@ public class ClientUploadActivity extends AppCompatActivity {
                     packetCollection.add(packet);
 
                     byteOStream.reset();
+
+                    currSeqNo++;
                 }
             } catch (IOException ex) {
                 Log.d(TAG, "Error in converting file to bytes");
@@ -338,8 +340,6 @@ public class ClientUploadActivity extends AppCompatActivity {
                         generateToast("Packet lost!");
                         System.out.println("Packet lost!");
                         //System.out.println("Client: " + sendPacket.toString());
-
-                        currSeqNo++;
                         continue;
                     }
 
@@ -365,7 +365,8 @@ public class ClientUploadActivity extends AppCompatActivity {
                     }
 
                     if (ackCollection.size() >= 3) {
-                        byte[] sendLostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo()));
+                        Ack firstAck = ackCollection.get(0);
+                        byte[] sendLostPacket = Converter.toBytes(packetCollection.get(firstAck.getPacketNo()));
 
                         command = ServerActivity.RECEIVE_BYTES;
 
@@ -374,9 +375,12 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                         clientSocket.send(commandPacket); // command Server to Receive incoming bytes
                         clientSocket.send(sendPacket); // send bytes to Server
-                    }
 
-                    currSeqNo++;
+                        for (Ack a : ackCollection) {
+                            if (a.getPacketNo() == firstAck.getPacketNo())
+                                ackCollection.remove(a);
+                        }
+                    }
                 }
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
