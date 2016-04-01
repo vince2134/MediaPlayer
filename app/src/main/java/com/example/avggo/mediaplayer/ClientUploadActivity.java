@@ -75,10 +75,8 @@ public class ClientUploadActivity extends AppCompatActivity {
         uploadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                UploadTask uploadTask = new UploadTask(ipAddress, portNumber, filePath.getText().toString());
+                UploadTask uploadTask = new UploadTask(ClientUploadActivity.this, ipAddress, portNumber, filePath.getText().toString());
                 uploadTask.execute();
-
-                finish();
             }
         });
     }
@@ -267,11 +265,13 @@ public class ClientUploadActivity extends AppCompatActivity {
         private String dstAddress;
         private int dstPort;
         private String fPath;
+        private Context c;
 
-        public UploadTask (String ipAddr, int port, String fPath) {
+        public UploadTask (Context c, String ipAddr, int port, String fPath) {
             dstAddress = ipAddr;
             dstPort = port;
             this.fPath = fPath;
+            this.c = c;
         }
 
         protected Void doInBackground (Void... arg0) {
@@ -381,6 +381,8 @@ public class ClientUploadActivity extends AppCompatActivity {
                                 ackCollection.remove(a);
                         }
                     }
+
+                    System.out.println ("Client sent packet with seqno" + p.getSeqNo());
                 }
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -407,11 +409,18 @@ public class ClientUploadActivity extends AppCompatActivity {
         protected void onPreExecute() {
             super.onPreExecute();
 
+            progDialog = new ProgressDialog(c);
+            progDialog.setMessage("Uploading please wait...");
+            progDialog.show();
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+
+            progDialog.dismiss();
+
+            finish();
         }
     }
 }
