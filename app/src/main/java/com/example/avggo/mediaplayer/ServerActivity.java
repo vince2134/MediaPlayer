@@ -188,11 +188,12 @@ public class ServerActivity extends AppCompatActivity {
     private class SocketServerThread extends Thread {
         private int pic_index = 0;
 
-        byte[] accumulatedBytes = new byte[0];
-        int totalByteSize = 0;
-        Ack ack = new Ack(-1);
+        private byte[] accumulatedBytes = new byte[0];
+        private int totalByteSize = 0;
 
-        ArrayList<Packet> collectedPackets = new ArrayList<Packet>();
+        private ArrayList<Packet> collectedPackets = new ArrayList<Packet>();
+        private ArrayList<Ack> acksInLine = new ArrayList<Ack>();
+
         //private boolean slideShowStarted = false;
         //private Handler handler = new Handler();
         private Timer timer;
@@ -217,6 +218,7 @@ public class ServerActivity extends AppCompatActivity {
                 serverSocket = new DatagramSocket(SocketServerPORT);
                 byte[] receiveData = new byte[1024];
                 byte[] sendData;
+                acksInLine.add(new Ack(-1));
                 assetManager = getAssets();
                 SingletonServerSimulation settings = SingletonServerSimulation.getInstance();
 
@@ -251,7 +253,11 @@ public class ServerActivity extends AppCompatActivity {
                                 return p1.getSeqNo() - p2.getSeqNo();
                             }
                         });
-
+                        /*
+                        for (Packet p : collectedPackets){
+                            System.out.println("Packet: " + p.getSeqNo());
+                        }
+                        */
                         int currByteIndex = 0;
                         accumulatedBytes = new byte[totalByteSize];
                         for (Packet p : collectedPackets) {
@@ -269,12 +275,14 @@ public class ServerActivity extends AppCompatActivity {
                         fileOStream.close();
 
                         prevSeqNo = -1;
+
+                        continue;
                     }
 
                     if (settings.getRandomLossProbability()) {
                         System.out.println("Packet lost!");
                         this.sleep(settings.getDelay());
-                        continue;
+
                     }
 
                     else if (command.contains(RECEIVE_BYTES)) {
@@ -316,16 +324,25 @@ public class ServerActivity extends AppCompatActivity {
                         }
 
                         Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
-;
-                        if (((receivedPacket.getSeqNo()-1) != prevSeqNo) && (prevSeqNo != -1)) {
-                            ack = new Ack(prevSeqNo);
+
+                        if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo() + 1)) {
+                            acksInLine.remove(0);
+                        } else {
+
+                            if (((receivedPacket.getSeqNo() - 1) != prevSeqNo) && (prevSeqNo != -1)) {
+
+                                if (acksInLine.get(0).getPacketNo() == -1)
+                                    acksInLine.set(0, new Ack(prevSeqNo));
+                                else
+                                    acksInLine.add(new Ack(prevSeqNo));
+
+                            }
                         }
 
-                        if (receivedPacket.getSeqNo() == ack.getPacketNo()) {
-                            ack = new Ack(-1);
-                        }
+                        if (acksInLine.isEmpty())
+                            acksInLine.add(new Ack(-1));
 
-                        byte[] sendAck = Converter.toBytes(ack);
+                        byte[] sendAck = Converter.toBytes(acksInLine.get(0));
 
                         ackPacket = new DatagramPacket(sendAck, sendAck.length, receiveFragment.getAddress(), receiveFragment.getPort());
 
@@ -334,7 +351,8 @@ public class ServerActivity extends AppCompatActivity {
                         collectedPackets.add(receivedPacket);
                         totalByteSize += receivedPacket.getData().length;
 
-                        prevSeqNo = receivedPacket.getSeqNo();
+                        if (!(receivedPacket.getSeqNo() < prevSeqNo))
+                            prevSeqNo = receivedPacket.getSeqNo();
                     }
                     else if (command.contains(CONNECT)) {
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_in);
