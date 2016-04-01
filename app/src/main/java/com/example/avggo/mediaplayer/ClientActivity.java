@@ -135,7 +135,7 @@ public class ClientActivity extends AppCompatActivity {
     }
 
     private void executeCommand(String command) {
-        final String task = command;
+        /*final String task = command;
         stopSlideShow();
         SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
         Timer timer = new Timer();
@@ -146,7 +146,10 @@ public class ClientActivity extends AppCompatActivity {
                 clientTask.execute();
                 System.out.println("TASK EXECUTED");
             }
-        }, settings.getDelay());
+        }, settings.getDelay());*/
+        stopSlideShow();
+        ClientTask clientTask = new ClientTask(ipAddress, portNumber, command);
+        clientTask.execute();
 
     }
 
@@ -228,18 +231,18 @@ public class ClientActivity extends AppCompatActivity {
                 sendData = command.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(dstAddress), dstPort);
 
-                if (!command.contains(ServerActivity.CONNECT) && settings.getRandomLossProbability()) {
+                /*if (!command.contains(ServerActivity.CONNECT) && settings.getRandomLossProbability()) {
                     generateToast("Packet lost!");
                     System.out.println("Packet lost!");
                     System.out.println("Client: " + sendPacket.toString());
                     return null;
-                }
+                }*/
 
                 clientSocket.send(sendPacket);
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
 
-                Timer t = new Timer();
+                /*Timer t = new Timer();
                 if (!command.contains(ServerActivity.CONNECT)) {
                     t.schedule(new TimerTask() {
                         @Override
@@ -252,7 +255,7 @@ public class ClientActivity extends AppCompatActivity {
                             }
                         }
                     }, settings.getTimeout());
-                }
+                }*/
 
                 if (timedOut) {
                     // Resend?
@@ -261,10 +264,10 @@ public class ClientActivity extends AppCompatActivity {
                 }
 
                 clientSocket.receive(receivePacket);
-                received = true;
+                /*received = true;
                 if (t != null) {
                     t.cancel();
-                }
+                }*/
                 response = new String(receivePacket.getData());
                 //System.out.println(response + " Ey");
 
