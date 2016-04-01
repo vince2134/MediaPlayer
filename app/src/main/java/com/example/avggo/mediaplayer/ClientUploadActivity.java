@@ -287,26 +287,36 @@ public class ClientUploadActivity extends AppCompatActivity {
             return null;
         }
 
+        DatagramSocket clientSocket;
+        
+
+        int currSeqNo = 0;
+
+        ArrayList<Packet> packetCollection = new ArrayList<Packet>();
+        ArrayList<Ack> ackCollection = new ArrayList<Ack>();
+
+        String command = "";
+        Packet packet;
+        DatagramPacket sendPacket;
+        DatagramPacket commandPacket;
+        DatagramPacket ackPacket;
+        byte[] buffer;
+        byte[] receivedAck;
+
+        FileInputStream fileIStream;
+        ByteArrayOutputStream byteOStream;
+        
         @TargetApi(Build.VERSION_CODES.KITKAT)
         private void sendFile(File f, InetAddress ipAddr, int dstPort) throws IOException {
-            DatagramSocket clientSocket;
             clientSocket = new DatagramSocket();
+            final InetAddress ipAdd = ipAddr;
+            final int destPort = dstPort;
 
-            int currSeqNo = 0;
+            buffer = new byte[1500];
+            receivedAck = new byte[1024];
 
-            ArrayList<Packet> packetCollection = new ArrayList<Packet>();
-            ArrayList<Ack> ackCollection = new ArrayList<Ack>();
-
-            String command = "";
-            Packet packet;
-            DatagramPacket sendPacket;
-            DatagramPacket commandPacket;
-            DatagramPacket ackPacket;
-            byte[] buffer = new byte[1500];
-            byte[] receivedAck = new byte[1024];
-
-            FileInputStream fileIStream = new FileInputStream(f);
-            ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
+            fileIStream = new FileInputStream(f);
+            byteOStream = new ByteArrayOutputStream();
 
             try {
                 for (int readNum; (readNum = fileIStream.read(buffer)) != -1;) {
@@ -325,68 +335,71 @@ public class ClientUploadActivity extends AppCompatActivity {
             } catch (IOException ex) {
                 Log.d(TAG, "Error in converting file to bytes");
             }
+            for (Packet p : packetCollection) {
+                final Packet packet = p;
+                Handler handler = new Handler();
+                final Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
-            try {
-                for (Packet p : packetCollection) {
-                    SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+                            if (settings.getRandomLossProbability()) {
+                                generateToast("Packet lost!");
+                                System.out.println("Packet lost!");
 
-                    /*if (settings.getRandomLossProbability()) {
-                        System.out.println("Packet lost!");
-                        this.(settings.getDelay());
-                        continue;
-                    }*/
+                                return;
+                            }
 
-                    if (settings.getRandomLossProbability()) {
-                        generateToast("Packet lost!");
-                        System.out.println("Packet lost!");
-                        //System.out.println("Client: " + sendPacket.toString());
-                        continue;
-                    }
+                            command = ServerActivity.RECEIVE_BYTES;
 
-                    command = ServerActivity.RECEIVE_BYTES;
+                            byte[] sendData = Converter.toBytes(packet);
 
-                    byte[] sendData = Converter.toBytes(p);
+                            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAdd, destPort);
+                            sendPacket = new DatagramPacket(sendData, sendData.length, ipAdd, destPort);
 
-                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                    sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
+                            clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+                            clientSocket.send(sendPacket); // send bytes to Server
 
-                    clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-                    clientSocket.send(sendPacket); // send bytes to Server
+                            ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
 
-                    ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
+                            clientSocket.receive(ackPacket);
 
-                    clientSocket.receive(ackPacket);
+                            Ack ack = (Ack) Converter.toObject(ackPacket.getData());
 
-                    Ack ack = (Ack) Converter.toObject(ackPacket.getData());
+                            if (ack.getPacketNo() != -1) {
+                                ackCollection.add(ack);
+                                System.out.println("Received Ack" + ack.getPacketNo() + "!");
+                            }
 
-                    if (ack.getPacketNo() != -1) {
-                        ackCollection.add(ack);
-                        System.out.println("Received Ack" + ack.getPacketNo() + "!");
-                    }
+                            if (ackCollection.size() >= 3) {
+                                Ack firstAck = ackCollection.get(0);
+                                byte[] sendLostPacket = Converter.toBytes(packetCollection.get(firstAck.getPacketNo()));
 
-                    if (ackCollection.size() >= 3) {
-                        Ack firstAck = ackCollection.get(0);
-                        byte[] sendLostPacket = Converter.toBytes(packetCollection.get(firstAck.getPacketNo()));
+                                command = ServerActivity.RECEIVE_BYTES;
 
-                        command = ServerActivity.RECEIVE_BYTES;
+                                commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAdd, destPort);
+                                sendPacket = new DatagramPacket(sendLostPacket, sendLostPacket.length, ipAdd, destPort);
 
-                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                        sendPacket = new DatagramPacket(sendLostPacket, sendLostPacket.length, ipAddr, dstPort);
+                                clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+                                clientSocket.send(sendPacket); // send bytes to Server
 
-                        clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-                        clientSocket.send(sendPacket); // send bytes to Server
+                                for (Ack a : ackCollection) {
+                                    if (a.getPacketNo() == firstAck.getPacketNo())
+                                        ackCollection.remove(a);
+                                }
+                            }
 
-                        for (Ack a : ackCollection) {
-                            if (a.getPacketNo() == firstAck.getPacketNo())
-                                ackCollection.remove(a);
+                            System.out.println ("Client sent packet with seqno" + packet.getSeqNo());
+                        } catch(Exception e) {
+                            e.printStackTrace();
                         }
                     }
-
-                    System.out.println ("Client sent packet with seqno" + p.getSeqNo());
-                }
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                };
+                handler.postDelayed(runnable, SingletonClientSimulation.getInstance().getDelay());
             }
+            
+                
 
             byteOStream.close();
 
