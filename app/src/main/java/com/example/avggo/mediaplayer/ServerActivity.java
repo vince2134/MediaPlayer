@@ -279,12 +279,6 @@ public class ServerActivity extends AppCompatActivity {
                         //continue;
                     }
 
-                    if (settings.getRandomLossProbability()) {
-                        System.out.println("Packet lost!");
-                        this.sleep(settings.getDelay());
-
-                    }
-
                     else if (command.contains(RECEIVE_BYTES)) {
                         this.sleep(settings.getDelay());
 
@@ -321,38 +315,43 @@ public class ServerActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
 
-                        Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
+                        if (settings.getRandomLossProbability()) {
+                            System.out.println("Packet lost!");
+                            Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
 
-                        if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo() + 1)) {
-                            acksInLine.remove(0);
-                        } else {
+                            if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo() + 1)) {
+                                acksInLine.remove(0);
+                            } else {
 
-                            if (((receivedPacket.getSeqNo() - 1) != prevSeqNo) && (prevSeqNo != -1)) {
+                                if (((receivedPacket.getSeqNo() - 1) != prevSeqNo) && (prevSeqNo != -1)) {
 
-                                if (acksInLine.get(0).getPacketNo() == -1)
-                                    acksInLine.set(0, new Ack(prevSeqNo));
-                                else
-                                    acksInLine.add(new Ack(prevSeqNo));
+                                    if (acksInLine.get(0).getPacketNo() == -1)
+                                        acksInLine.set(0, new Ack(prevSeqNo));
+                                    else
+                                        acksInLine.add(new Ack(prevSeqNo));
 
-                                System.out.println ("[" + new Date().toString() + "] Lost packet with sequence number: " + (receivedPacket.getSeqNo()-1));
-
+                                    if(settings.getVerbosity() == 1)
+                                        System.out.println("Lost packet with sequence number: " + (receivedPacket.getSeqNo() - 1));
+                                    if(settings.getVerbosity() == 3)
+                                        System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + (receivedPacket.getSeqNo() - 1));
+                                }
                             }
+
+                            if (acksInLine.isEmpty())
+                                acksInLine.add(new Ack(-1));
+
+                            byte[] sendAck = Converter.toBytes(acksInLine.get(0));
+
+                            ackPacket = new DatagramPacket(sendAck, sendAck.length, receiveFragment.getAddress(), receiveFragment.getPort());
+
+                            serverSocket.send(ackPacket);
+
+                            collectedPackets.add(receivedPacket);
+                            totalByteSize += receivedPacket.getData().length;
+
+                            if (!(receivedPacket.getSeqNo() < prevSeqNo))
+                                prevSeqNo = receivedPacket.getSeqNo();
                         }
-
-                        if (acksInLine.isEmpty())
-                            acksInLine.add(new Ack(-1));
-
-                        byte[] sendAck = Converter.toBytes(acksInLine.get(0));
-
-                        ackPacket = new DatagramPacket(sendAck, sendAck.length, receiveFragment.getAddress(), receiveFragment.getPort());
-
-                        serverSocket.send(ackPacket);
-
-                        collectedPackets.add(receivedPacket);
-                        totalByteSize += receivedPacket.getData().length;
-
-                        if (!(receivedPacket.getSeqNo() < prevSeqNo))
-                            prevSeqNo = receivedPacket.getSeqNo();
                     }
                     else if (command.contains(CONNECT)) {
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_in);
