@@ -253,7 +253,7 @@ public class ClientUploadActivity extends AppCompatActivity {
 
     private void generateToast(String message) {
         final String text = message;
-        ClientUploadActivity.this.runOnUiThread( new Runnable() {
+        ClientUploadActivity.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
@@ -337,8 +337,9 @@ public class ClientUploadActivity extends AppCompatActivity {
             }
             for (Packet p : packetCollection) {
                 final Packet packet = p;
-                Handler handler = new Handler();
-                final Runnable runnable = new Runnable() {
+                //Handler handler = new Handler();
+                //final Runnable runnable =
+                ClientUploadActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -395,8 +396,8 @@ public class ClientUploadActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
                     }
-                };
-                handler.postDelayed(runnable, SingletonClientSimulation.getInstance().getDelay());
+                });
+                //handler.postDelayed(runnable, SingletonClientSimulation.getInstance().getDelay());
             }
             
                 
