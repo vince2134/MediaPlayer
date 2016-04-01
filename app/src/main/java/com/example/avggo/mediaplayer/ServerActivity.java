@@ -276,7 +276,7 @@ public class ServerActivity extends AppCompatActivity {
 
                         prevSeqNo = -1;
 
-                        continue;
+                        //continue;
                     }
 
                     if (settings.getRandomLossProbability()) {
@@ -287,8 +287,6 @@ public class ServerActivity extends AppCompatActivity {
 
                     else if (command.contains(RECEIVE_BYTES)) {
                         this.sleep(settings.getDelay());
-
-                        System.out.println(new Date().toString());
 
                         byte[] receiveBytes = new byte[2048];
                         DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
@@ -335,6 +333,8 @@ public class ServerActivity extends AppCompatActivity {
                                     acksInLine.set(0, new Ack(prevSeqNo));
                                 else
                                     acksInLine.add(new Ack(prevSeqNo));
+
+                                System.out.println ("[" + new Date().toString() + "] Lost packet with sequence number: " + (receivedPacket.getSeqNo()-1));
 
                             }
                         }

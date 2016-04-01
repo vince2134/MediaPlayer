@@ -340,12 +340,63 @@ public class ClientUploadActivity extends AppCompatActivity {
                         generateToast("Packet lost!");
                         System.out.println("Packet lost!");
                         //System.out.println("Client: " + sendPacket.toString());
-                        continue;
+                        //continue;
+                    } else {
+
+                        command = ServerActivity.RECEIVE_BYTES;
+
+                        if (ackCollection.size() == 3) {
+                            for (Ack a : ackCollection) {
+                                //System.out.println("Ack Collection contains: " + a.getPacketNo());
+                            }
+
+                            byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
+
+                            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+                            sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
+
+                            clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+                            clientSocket.send(sendPacket); // send bytes to Server
+
+                            //System.out.println("Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
+
+                            ackCollection.clear();
+
+                            ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
+
+                            clientSocket.receive(ackPacket);
+
+                            Ack ack = (Ack) Converter.toObject(ackPacket.getData());
+
+                            if (ack.getPacketNo() != -1) {
+                                ackCollection.add(ack);
+                                //System.out.println("Received Ack" + ack.getPacketNo() + "!");
+                            }
+                        }
+
+                        byte[] sendData = Converter.toBytes(p);
+
+                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+                        sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
+
+                        clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+                        clientSocket.send(sendPacket); // send bytes to Server
+
+                        //System.out.println("Client sent packet with seqno" + p.getSeqNo());
+
+                        ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
+
+                        clientSocket.receive(ackPacket);
+
+                        Ack ack = (Ack) Converter.toObject(ackPacket.getData());
+
+                        if (ack.getPacketNo() != -1) {
+                            ackCollection.add(ack);
+                            //System.out.println("Received Ack" + ack.getPacketNo() + "!");
+                        }
                     }
 
-                    command = ServerActivity.RECEIVE_BYTES;
-
-                    if (ackCollection.size() == 3) {
+                    if (!ackCollection.isEmpty()) {
                         for (Ack a : ackCollection) {
                             //System.out.println("Ack Collection contains: " + a.getPacketNo());
                         }
@@ -372,56 +423,6 @@ public class ClientUploadActivity extends AppCompatActivity {
                             ackCollection.add(ack);
                             //System.out.println("Received Ack" + ack.getPacketNo() + "!");
                         }
-                    }
-
-                    byte[] sendData = Converter.toBytes(p);
-
-                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                    sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
-
-                    clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-                    clientSocket.send(sendPacket); // send bytes to Server
-
-                    //System.out.println("Client sent packet with seqno" + p.getSeqNo());
-
-                    ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
-
-                    clientSocket.receive(ackPacket);
-
-                    Ack ack = (Ack) Converter.toObject(ackPacket.getData());
-
-                    if (ack.getPacketNo() != -1) {
-                        ackCollection.add(ack);
-                        //System.out.println("Received Ack" + ack.getPacketNo() + "!");
-                    }
-                }
-
-                if (!ackCollection.isEmpty()) {
-                    for (Ack a : ackCollection) {
-                        //System.out.println("Ack Collection contains: " + a.getPacketNo());
-                    }
-
-                    byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
-
-                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                    sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
-
-                    clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-                    clientSocket.send(sendPacket); // send bytes to Server
-
-                    //System.out.println("Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
-
-                    ackCollection.clear();
-
-                    ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
-
-                    clientSocket.receive(ackPacket);
-
-                    Ack ack = (Ack) Converter.toObject(ackPacket.getData());
-
-                    if (ack.getPacketNo() != -1) {
-                        ackCollection.add(ack);
-                        //System.out.println("Received Ack" + ack.getPacketNo() + "!");
                     }
                 }
             } catch (ClassNotFoundException e) {
