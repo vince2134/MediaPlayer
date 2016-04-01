@@ -37,6 +37,8 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Timer;
@@ -184,7 +186,7 @@ public class ServerActivity extends AppCompatActivity {
         byte[] accumulatedBytes = new byte[0];
         int totalByteSize = 0;
 
-        ArrayList<byte[]> collectedBytes = new ArrayList<byte[]>();
+        ArrayList<Packet> collectedPackets = new ArrayList<Packet>();
         //private boolean slideShowStarted = false;
         //private Handler handler = new Handler();
         private Timer timer;
@@ -230,11 +232,27 @@ public class ServerActivity extends AppCompatActivity {
 
 
                     if (command.contains(RESTART_TOTAL_BYTES)) { // set bytes back to default
+                        collectedPackets.clear();
                         accumulatedBytes = new byte[0];
                         totalByteSize = 0;
                     }
                     else if (command.contains(PROCESS_FILE)) {
                         File processedFile = new File(LOCAL_APP_STORAGE, "img" + fileCollection.size() + ".jpg");
+
+                        Collections.sort(collectedPackets, new Comparator<Packet>() {
+                            @Override
+                            public int compare(Packet p1, Packet p2) {
+                                return p1.getSeqNo() - p2.getSeqNo();
+                            }
+                        });
+
+                        int currByteIndex = 0;
+                        accumulatedBytes = new byte[totalByteSize];
+                        for (Packet p : collectedPackets) {
+                            System.arraycopy(p.getData(), 0, accumulatedBytes, currByteIndex, p.getData().length);
+
+                            currByteIndex += p.getData().length;
+                        }
 
                         FileOutputStream fileOStream = new FileOutputStream(processedFile);
 
@@ -293,30 +311,21 @@ public class ServerActivity extends AppCompatActivity {
 
                         Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
 
-                        byte[] byteChunk = receivedPacket.getData();
-                        //byte[] tempBytes = new byte[accumulatedBytes.length + byteChunk.length];
-
-                        //totalByteSize += receiveFragment.getLength();
-
+                        Ack ack;
                         if (((receivedPacket.getSeqNo()-1) != prevSeqNo) && (prevSeqNo != -1)) {
-                            Ack ack = new Ack(prevSeqNo);
-
-                            byte[] sendAck = Converter.toBytes(ack);
-
-                            ackPacket = new DatagramPacket(sendAck, sendAck.length, receiveFragment.getAddress(), receiveFragment.getPort());
-
-                            serverSocket.send(ackPacket);
+                            ack = new Ack(prevSeqNo);
                         } else {
-                            serverSocket.send(new DatagramPacket(null, 0, receiveFragment.getAddress(), receiveFragment.getPort()));
+                            ack = new Ack(-1);
                         }
 
-                        /*
-                        System.arraycopy(accumulatedBytes, 0, tempBytes, 0, accumulatedBytes.length);
-                        System.arraycopy(byteChunk, 0, tempBytes, accumulatedBytes.length, byteChunk.length);
+                        byte[] sendAck = Converter.toBytes(ack);
 
-                        accumulatedBytes = new byte[totalByteSize];
-                        accumulatedBytes = tempBytes;
-                        */
+                        ackPacket = new DatagramPacket(sendAck, sendAck.length, receiveFragment.getAddress(), receiveFragment.getPort());
+
+                        serverSocket.send(ackPacket);
+
+                        collectedPackets.add(receivedPacket);
+                        totalByteSize += receivedPacket.getData().length;
 
                         prevSeqNo = receivedPacket.getSeqNo();
                     }

@@ -3,6 +3,7 @@ package com.example.avggo.mediaplayer;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -43,6 +44,7 @@ public class ClientUploadActivity extends AppCompatActivity {
 
     TextView filePath;
     Button chooseFileBtn, uploadBtn;
+    ProgressDialog progDialog;
 
     String ipAddress;
     int portNumber;
@@ -307,17 +309,7 @@ public class ClientUploadActivity extends AppCompatActivity {
             ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
 
             try {
-
                 for (int readNum; (readNum = fileIStream.read(buffer)) != -1;) {
-
-                    SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
-
-                    /*if (settings.getRandomLossProbability()) {
-                        System.out.println("Packet lost!");
-                        this.(settings.getDelay());
-                        continue;
-                    }*/
-
                     byteOStream.write(buffer, 0, readNum);
 
                     System.out.println("read " + readNum + " bytes,");
@@ -325,6 +317,22 @@ public class ClientUploadActivity extends AppCompatActivity {
                     packet = new Packet (currSeqNo, byteOStream.toByteArray());
 
                     packetCollection.add(packet);
+
+                    byteOStream.reset();
+                }
+            } catch (IOException ex) {
+                Log.d(TAG, "Error in converting file to bytes");
+            }
+
+            try {
+                for (Packet p : packetCollection) {
+                    SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+
+                    /*if (settings.getRandomLossProbability()) {
+                        System.out.println("Packet lost!");
+                        this.(settings.getDelay());
+                        continue;
+                    }*/
 
                     if (settings.getRandomLossProbability()) {
                         generateToast("Packet lost!");
@@ -335,10 +343,9 @@ public class ClientUploadActivity extends AppCompatActivity {
                         continue;
                     }
 
-                    //command = "Receive Bytes";
                     command = ServerActivity.RECEIVE_BYTES;
 
-                    byte[] sendData = Converter.toBytes(packet);
+                    byte[] sendData = Converter.toBytes(p);
 
                     commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
                     sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
@@ -350,18 +357,27 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     clientSocket.receive(ackPacket);
 
-                    if (ackPacket.getData() != null) {
-                        Ack ack = (Ack) Converter.toObject(ackPacket.getData());
+                    Ack ack = (Ack) Converter.toObject(ackPacket.getData());
 
+                    if (ack.getPacketNo() != -1) {
                         ackCollection.add(ack);
+                        System.out.println("Received Ack" + ack.getPacketNo() + "!");
                     }
 
-                    byteOStream.reset();
+                    if (ackCollection.size() >= 3) {
+                        byte[] sendLostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo()));
+
+                        command = ServerActivity.RECEIVE_BYTES;
+
+                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+                        sendPacket = new DatagramPacket(sendLostPacket, sendLostPacket.length, ipAddr, dstPort);
+
+                        clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+                        clientSocket.send(sendPacket); // send bytes to Server
+                    }
 
                     currSeqNo++;
                 }
-            } catch (IOException ex) {
-                Log.d(TAG, "Error in converting file to bytes");
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -381,6 +397,17 @@ public class ClientUploadActivity extends AppCompatActivity {
             clientSocket.close();
 
             Log.d(TAG, "Sent");
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
         }
     }
 }
