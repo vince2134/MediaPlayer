@@ -93,11 +93,11 @@
         android:layout_height="wrap_content"
         android:text="Save"
         android:id="@+id/saveButton"
-        android:layout_above="@+id/cancelButton"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@+id/timeoutText"
         android:layout_alignLeft="@+id/cancelButton"
-        android:layout_alignStart="@+id/cancelButton" />
+        android:layout_alignStart="@+id/cancelButton"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
     <Button
         style="?android:attr/buttonStyleSmall"
@@ -105,7 +105,7 @@
         android:layout_height="wrap_content"
         android:text="Cancel"
         android:id="@+id/cancelButton"
-        android:layout_alignParentBottom="true"
+        android:layout_below="@+id/saveButton"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
 
