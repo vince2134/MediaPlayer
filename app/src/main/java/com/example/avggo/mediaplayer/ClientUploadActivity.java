@@ -339,58 +339,33 @@ public class ClientUploadActivity extends AppCompatActivity {
                         continue;
                     }*/
 
-                    if (settings.getRandomLossProbability()) {
-                        generateToast("Packet lost!");
-                        System.out.println("Packet lost!");
-                        i--;
-                        //System.out.println("Client: " + sendPacket.toString());
-                        //continue;
-                    } else {
+                    command = ServerActivity.RECEIVE_BYTES;
 
-                        command = ServerActivity.RECEIVE_BYTES;
-
-                        if (ackCollection.size() == 3) {
-                            for (Ack a : ackCollection) {
-                                //System.out.println("Ack Collection contains: " + a.getPacketNo());
-                            }
-
-                            byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
-
-                            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                            sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
-
-                            clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-
-                            Packet sp = (Packet) Converter.toObject(lostPacket);
-                            System.out.println ("[" + new Date().toString() + "] Lost packet with sequence number: " + (sp.getSeqNo()-1));
-
-                            clientSocket.send(sendPacket); // send bytes to Server
-
-                            //System.out.println("Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
-
-                            ackCollection.clear();
-
-                            ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
-
-                            clientSocket.receive(ackPacket);
-
-                            Ack ack = (Ack) Converter.toObject(ackPacket.getData());
-
-                            if (ack.getPacketNo() != -1) {
-                                ackCollection.add(ack);
-                                //System.out.println("Received Ack" + ack.getPacketNo() + "!");
-                            }
+                    if (ackCollection.size() == 3) {
+                        for (Ack a : ackCollection) {
+                            System.out.println("Fast Retransmit : Ack Collection contains: " + a.getPacketNo());
                         }
 
-                        byte[] sendData = Converter.toBytes(p);
+                        byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
 
                         commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                        sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
+                        sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
 
                         clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+
+                        if (settings.getRandomLossProbability()) {
+                            Packet sp = (Packet) Converter.toObject(lostPacket);
+                            System.out.println ("[" + new Date().toString() + "] Lost packet with sequence number: " + (sp.getSeqNo()-1));
+                            i--;
+                            continue;
+                        }
+
+
                         clientSocket.send(sendPacket); // send bytes to Server
 
-                        System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + p.getSeqNo());
+                        System.out.println("Fast Retransmit: Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
+
+                        ackCollection.clear();
 
                         ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
 
@@ -400,13 +375,45 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                         if (ack.getPacketNo() != -1) {
                             ackCollection.add(ack);
-                            //System.out.println("Received Ack" + ack.getPacketNo() + "!");
+                            System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
                         }
                     }
 
+                    byte[] sendData = Converter.toBytes(p);
+
+                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+                    sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
+
+                    clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+                    clientSocket.send(sendPacket); // send bytes to Server
+
+                    System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + p.getSeqNo());
+
+                    ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
+
+                    clientSocket.receive(ackPacket);
+
+                    Ack ack = (Ack) Converter.toObject(ackPacket.getData());
+
+                    if (ack.getPacketNo() != -1) {
+                        ackCollection.add(ack);
+                        System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
+                    }
+
+                    /*if (settings.getRandomLossProbability()) {
+                        generateToast("Packet lost!");
+                        System.out.println("Packet lost!");
+                        i--;
+                        //System.out.println("Client: " + sendPacket.toString());
+                        //continue;
+                    } else {
+
+
+                    }*/
+
                     if (!ackCollection.isEmpty()) {
                         for (Ack a : ackCollection) {
-                            //System.out.println("Ack Collection contains: " + a.getPacketNo());
+                            System.out.println("Fast Retransmit: Ack Collection contains: " + a.getPacketNo());
                         }
 
                         byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
@@ -417,7 +424,7 @@ public class ClientUploadActivity extends AppCompatActivity {
                         clientSocket.send(commandPacket); // command Server to Receive incoming bytes
                         clientSocket.send(sendPacket); // send bytes to Server
 
-                        //System.out.println("Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
+                        System.out.println("Fast Retransmit: Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
 
                         ackCollection.clear();
 
@@ -425,7 +432,7 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                         clientSocket.receive(ackPacket);
 
-                        Ack ack = (Ack) Converter.toObject(ackPacket.getData());
+                        ack = (Ack) Converter.toObject(ackPacket.getData());
 
                         if (ack.getPacketNo() != -1) {
                             ackCollection.add(ack);
@@ -460,6 +467,7 @@ public class ClientUploadActivity extends AppCompatActivity {
 
             progDialog = new ProgressDialog(c);
             progDialog.setMessage("Uploading please wait...");
+            progDialog.setCanceledOnTouchOutside(false);
             progDialog.show();
         }
 
