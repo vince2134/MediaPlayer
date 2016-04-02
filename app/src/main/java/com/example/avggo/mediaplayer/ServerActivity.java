@@ -25,6 +25,8 @@ import com.example.avggo.mediaplayer.fastretransmit.Converter;
 import com.example.avggo.mediaplayer.fastretransmit.Packet;
 import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -507,6 +509,29 @@ public class ServerActivity extends AppCompatActivity {
                     }
                 }
             });
+
+            Drawable currentDrawable = ((ImageView) image.getCurrentView()).getDrawable();
+            Bitmap currentBitmap = ((BitmapDrawable) currentDrawable).getBitmap();
+
+            ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
+            currentBitmap.compress(Bitmap.CompressFormat.PNG, 100, byteOStream);
+            byte[] bitmapByte = byteOStream.toByteArray();
+
+            ByteArrayInputStream byteIStream = new ByteArrayInputStream(bitmapByte);
+            byteOStream = new ByteArrayOutputStream();
+
+            byte[] buffer = new byte[1500];
+            int currSeqNo = 0;
+            ArrayList<Packet> packetCollection = new ArrayList<Packet>();
+
+            for (int readNum; (readNum = byteIStream.read()) != -1;) {
+                byteOStream.write(buffer, 0, readNum);
+                packetCollection.add(new Packet (currSeqNo, byteOStream.toByteArray()));
+
+                byteOStream.reset();
+
+                currSeqNo++;
+            }
         }
     }
 
