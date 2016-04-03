@@ -1,14 +1,19 @@
 package com.example.avggo.mediaplayer;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,11 +24,14 @@ import com.example.avggo.mediaplayer.singleton.SingletonClientSimulation;
 import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,9 +45,8 @@ public class ClientActivity extends AppCompatActivity {
     EditText slideShowLength;
     Button nextBtn, prevBtn, slideshowBtn, stopBtn, uploadBtn, simulateBtn;
     Bitmap bmp;
-    //ImageView image;
-
-    public static final String PROCESS_BITMAP = "Process Bitmap";
+    ImageView imageView;
+    ProgressDialog progDialog;
 
     String ipAddress;
     int portNumber;
@@ -78,6 +85,8 @@ public class ClientActivity extends AppCompatActivity {
         stopBtn = (Button) findViewById(R.id.stopBtn);
         uploadBtn = (Button) findViewById(R.id.uploadBtn);
         simulateBtn = (Button) findViewById(R.id.btnSimulate);
+
+        imageView = (ImageView) findViewById(R.id.clientImageView);
 
         prevBtn.setOnClickListener(new View.OnClickListener() {
 
@@ -163,7 +172,7 @@ public class ClientActivity extends AppCompatActivity {
             }
         }, settings.getDelay());*/
         stopSlideShow();
-        ClientTask clientTask = new ClientTask(ipAddress, portNumber, command);
+        ClientTask clientTask = new ClientTask(ClientActivity.this, ipAddress, portNumber, command);
         clientTask.execute();
 
     }
@@ -172,7 +181,7 @@ public class ClientActivity extends AppCompatActivity {
     private TimerTask timerTask = new TimerTask() {
         @Override
         public void run() {
-            ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.NEXT);
+            ClientTask clientTask = new ClientTask(ClientActivity.this, ipAddress, portNumber, ServerActivity.NEXT);
             clientTask.execute();
         }
     };
@@ -206,65 +215,100 @@ public class ClientActivity extends AppCompatActivity {
         this.fileName.setText(fileName);
     }
 
-    private void receiveMedia (DatagramSocket clientSocket) throws IOException, ClassNotFoundException {
-        //this.sleep(settings.getDelay());
+    public void setImage(final File image) {
+        ClientActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    FileInputStream in = new FileInputStream(image);
+                    Drawable d = Drawable.createFromStream(in, null);
+                    Bitmap b = ((BitmapDrawable) d).getBitmap();
+                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
+                    imageView.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
+
+                    image.delete();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    private void generateToast(String message) {
+        final String text = message;
+        ClientActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public void receiveMedia (DatagramSocket clientSocket, String ipAddress, int port) throws IOException, ClassNotFoundException {
         SingletonServerSimulation settings = SingletonServerSimulation.getInstance();
 
-        int prevSeqNo = -1;
-        int totalByteSize = 0;
         byte[] commandBytes = new byte[1024];
-        byte[] receiveBytes = new byte[2048];
-        DatagramPacket receiveCommand = new DatagramPacket(commandBytes, commandBytes.length);
-        DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
-        ArrayList<Packet> collectedPackets = new ArrayList<>();
-        ArrayList<Ack> acksInLine = new ArrayList<Ack>();
-
-        DatagramPacket ackPacket;
-
-        /*try {
-
-            Timer t = new Timer();
-            t.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    // do stuff here
-                    if (!received) {
-                        timedOut = true;
-                        System.out.println("Timeout!");
-                        generateToast("Timeout!");
-                    }
-                }
-            }, settings.getTimeout());
-
-            if (timedOut) {
-                // Resend?
-
-            }
-
-            serverSocket.receive(receiveFragment);
-
-            received = true;
-            if (t != null) {
-                t.cancel();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
+        DatagramPacket receiveCommand = new DatagramPacket(commandBytes, commandBytes.length, InetAddress.getByName(ipAddress), port);
 
         clientSocket.receive(receiveCommand);
 
-        String command = new String (receiveCommand.getData());
+        String command = new String(receiveCommand.getData());
 
-        while (command.contains(ServerActivity.RECEIVE_BYTES)) {
+        byte[] receiveBytes = new byte[2048];
+        DatagramPacket receiveFragment = new DatagramPacket(receiveBytes, receiveBytes.length);
+        DatagramPacket ackPacket;
 
-            if (settings.getRandomLossProbability()) {
-                System.out.println("Packet lost!");
+        int prevSeqNo = 0;
+        ArrayList<Ack> acksInLine = new ArrayList<Ack>();
+        acksInLine.add(new Ack(-1));
+
+        int totalByteSize = 0;
+        ArrayList<Packet> collectedPackets = new ArrayList<Packet>();
+
+            //this.sleep(settings.getDelay());
+
+            /*
+            try {
+                Timer t = new Timer();
+                t.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        // do stuff here
+                        if (!received) {
+                            timedOut = true;
+                            System.out.println("Timeout!");
+                            generateToast("Timeout!");
+                        }
+                    }
+                }, settings.getTimeout());
+
+                if (timedOut) {
+                    // Resend?
+
+                }
+
+                serverSocket.receive(receiveFragment);
+
+                received = true;
+                if (t != null) {
+                    t.cancel();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            */
+
+            //if (settings.getRandomLossProbability()) {
+            //System.out.println("Packet lost!");
+            while (command.contains(ServerActivity.RECEIVE_BYTES)) {
+                clientSocket.receive(receiveFragment);
                 Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
 
                 if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo() + 1)) {
                     acksInLine.remove(0);
                 } else {
+
                     if (((receivedPacket.getSeqNo() - 1) != prevSeqNo) && (prevSeqNo != -1)) {
 
                         if (acksInLine.get(0).getPacketNo() == -1)
@@ -289,58 +333,44 @@ public class ClientActivity extends AppCompatActivity {
                 clientSocket.send(ackPacket);
 
                 collectedPackets.add(receivedPacket);
+
                 totalByteSize += receivedPacket.getData().length;
 
                 if (!(receivedPacket.getSeqNo() < prevSeqNo))
                     prevSeqNo = receivedPacket.getSeqNo();
+                //}
+                clientSocket.receive(receiveCommand);
+
+                command = new String(receiveCommand.getData());
             }
 
-            clientSocket.receive(receiveCommand);
 
-            command = new String (receiveCommand.getData());
-        }
+        File processedFile = new File(ServerActivity.LOCAL_APP_STORAGE, "img.jpg");
 
-        if (command.contains(PROCESS_BITMAP)) {
-
-            Collections.sort(collectedPackets, new Comparator<Packet>() {
-                @Override
-                public int compare(Packet p1, Packet p2) {
-                    return p1.getSeqNo() - p2.getSeqNo();
-                }
-            });
-                        /*
-                        for (Packet p : collectedPackets){
-                            System.out.println("Packet: " + p.getSeqNo());
-                        }
-                        */
-            int currByteIndex = 0;
-            byte[] accumulatedBytes = new byte[totalByteSize];
-            for (Packet p : collectedPackets) {
-                System.arraycopy(p.getData(), 0, accumulatedBytes, currByteIndex, p.getData().length);
-
-                currByteIndex += p.getData().length;
-            }
-
-            bmp = BitmapFactory.decodeByteArray(accumulatedBytes, 0, accumulatedBytes.length);
-
-            prevSeqNo = -1;
-
-            //continue;
-        }
-    }
-
-    private void setImageView() {
-
-    }
-
-    private void generateToast(String message) {
-        final String text = message;
-        ClientActivity.this.runOnUiThread(new Runnable() {
+        Collections.sort(collectedPackets, new Comparator<Packet>() {
             @Override
-            public void run() {
-                Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
+            public int compare(Packet p1, Packet p2) {
+                return p1.getSeqNo() - p2.getSeqNo();
             }
         });
+
+        int currByteIndex = 0;
+        byte[] accumulatedBytes = new byte[totalByteSize];
+        for (Packet p : collectedPackets) {
+            System.arraycopy(p.getData(), 0, accumulatedBytes, currByteIndex, p.getData().length);
+
+            currByteIndex += p.getData().length;
+        }
+
+        FileOutputStream fileOStream = new FileOutputStream(processedFile);
+
+        fileOStream.write(accumulatedBytes);
+
+        setImage(processedFile);
+
+        fileOStream.close();
+
+        prevSeqNo = -1;
     }
 
     class ClientTask extends AsyncTask<Void, Void, Void> {
@@ -349,13 +379,15 @@ public class ClientActivity extends AppCompatActivity {
         private int dstPort;
         private String response = "";
         private String command;
+        private Context c;
 
         private boolean timedOut = false;
         private boolean received = false;
-        ClientTask(String addr, int port, String command){
+        ClientTask(Context c, String addr, int port, String command){
             dstAddress = addr;
             dstPort = port;
             this.command = command;
+            this.c = c;
         }
 
         @Override
@@ -382,7 +414,6 @@ public class ClientActivity extends AppCompatActivity {
 
                 clientSocket.send(sendPacket);
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-
 
                 /*Timer t = new Timer();
                 if (!command.contains(ServerActivity.CONNECT)) {
@@ -411,6 +442,7 @@ public class ClientActivity extends AppCompatActivity {
                     t.cancel();
                 }*/
                 response = new String(receivePacket.getData());
+                System.out.println (response);
                 //System.out.println(response + " Ey");
 
                 ClientActivity.this.runOnUiThread(new Runnable() {
@@ -419,19 +451,36 @@ public class ClientActivity extends AppCompatActivity {
                         setFileName(response);
                     }
                 });
+
+                receiveMedia(clientSocket, dstAddress, dstPort);
             } catch (IOException e) {
                 e.printStackTrace();
                 generateToast("Could not connect to server");
                 //Toast.makeText(getBaseContext(), "Could not connect to server.", Toast.LENGTH_SHORT).show();
                 finish();
 
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+                System.out.println("rawr");
             }
             return null;
         }
 
         @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            progDialog = new ProgressDialog(c);
+            progDialog.setMessage("Buffering...");
+            progDialog.setCanceledOnTouchOutside(false);
+            progDialog.show();
+        }
+
+        @Override
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
+
+            progDialog.dismiss();
         }
     }
 }

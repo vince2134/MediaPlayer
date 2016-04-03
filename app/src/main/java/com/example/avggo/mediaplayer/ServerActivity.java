@@ -1,14 +1,20 @@
 package com.example.avggo.mediaplayer;
 
+import android.annotation.TargetApi;
 import android.app.ActionBar.LayoutParams;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -23,6 +29,7 @@ import android.widget.ViewSwitcher.ViewFactory;
 import com.example.avggo.mediaplayer.fastretransmit.Ack;
 import com.example.avggo.mediaplayer.fastretransmit.Converter;
 import com.example.avggo.mediaplayer.fastretransmit.Packet;
+import com.example.avggo.mediaplayer.singleton.SingletonClientSimulation;
 import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
 
 import java.io.ByteArrayInputStream;
@@ -317,8 +324,8 @@ public class ServerActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
 
-                        if (settings.getRandomLossProbability()) {
-                            System.out.println("Packet lost!");
+                        //if (settings.getRandomLossProbability()) {
+                            //System.out.println("Packet lost!");
                             Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
 
                             if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo() + 1)) {
@@ -353,7 +360,7 @@ public class ServerActivity extends AppCompatActivity {
 
                             if (!(receivedPacket.getSeqNo() < prevSeqNo))
                                 prevSeqNo = receivedPacket.getSeqNo();
-                        }
+                        //}
                     }
                     else if (command.contains(CONNECT)) {
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_in);
@@ -370,6 +377,9 @@ public class ServerActivity extends AppCompatActivity {
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
+
+                        UploadTask uploadTask = new UploadTask(ServerActivity.this, IPAddress, port, fileCollection.get(pic_index).getPath());
+                        uploadTask.execute();
 
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
@@ -403,6 +413,9 @@ public class ServerActivity extends AppCompatActivity {
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
 
+                        UploadTask uploadTask = new UploadTask(ServerActivity.this, IPAddress, port, fileCollection.get(pic_index).getPath());
+                        uploadTask.execute();
+
                         ServerActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -435,6 +448,9 @@ public class ServerActivity extends AppCompatActivity {
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
+
+                        UploadTask uploadTask = new UploadTask(ServerActivity.this, IPAddress, port, fileCollection.get(pic_index).getPath());
+                        uploadTask.execute();
 
                         nextImage();
                     }
@@ -509,29 +525,6 @@ public class ServerActivity extends AppCompatActivity {
                     }
                 }
             });
-
-            Drawable currentDrawable = ((ImageView) image.getCurrentView()).getDrawable();
-            Bitmap currentBitmap = ((BitmapDrawable) currentDrawable).getBitmap();
-
-            ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
-            currentBitmap.compress(Bitmap.CompressFormat.PNG, 100, byteOStream);
-            byte[] bitmapByte = byteOStream.toByteArray();
-
-            ByteArrayInputStream byteIStream = new ByteArrayInputStream(bitmapByte);
-            byteOStream = new ByteArrayOutputStream();
-
-            byte[] buffer = new byte[1500];
-            int currSeqNo = 0;
-            ArrayList<Packet> packetCollection = new ArrayList<Packet>();
-
-            for (int readNum; (readNum = byteIStream.read()) != -1;) {
-                byteOStream.write(buffer, 0, readNum);
-                packetCollection.add(new Packet (currSeqNo, byteOStream.toByteArray()));
-
-                byteOStream.reset();
-
-                currSeqNo++;
-            }
         }
     }
 
@@ -561,5 +554,209 @@ public class ServerActivity extends AppCompatActivity {
         }
 
         return ip;
+    }
+
+    class UploadTask extends AsyncTask<Void, Void, Void> {
+        private InetAddress dstAddress;
+        private int dstPort;
+        private String fPath;
+        private Context c;
+
+        public UploadTask (Context c, InetAddress ipAddr, int port, String fPath) {
+            dstAddress = ipAddr;
+            dstPort = port;
+            this.fPath = fPath;
+            this.c = c;
+        }
+
+        protected Void doInBackground (Void... arg0) {
+            try {
+
+                sendFile(new File(fPath), dstAddress, dstPort);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @TargetApi(Build.VERSION_CODES.KITKAT)
+        private void sendFile(File f, InetAddress ipAddr, int dstPort) throws IOException {
+            DatagramSocket clientSocket;
+            clientSocket = new DatagramSocket();
+
+            int currSeqNo = 0;
+
+            ArrayList<Packet> packetCollection = new ArrayList<Packet>();
+            ArrayList<Ack> ackCollection = new ArrayList<Ack>();
+
+            String command = "";
+            Packet packet;
+            DatagramPacket sendPacket;
+            DatagramPacket commandPacket;
+            DatagramPacket ackPacket;
+            byte[] buffer = new byte[1500];
+            byte[] receivedAck = new byte[1024];
+
+            FileInputStream fileIStream = new FileInputStream(f);
+            ByteArrayOutputStream byteOStream = new ByteArrayOutputStream();
+
+            try {
+                for (int readNum; (readNum = fileIStream.read(buffer)) != -1;) {
+                    byteOStream.write(buffer, 0, readNum);
+
+                    System.out.println("read " + readNum + " bytes,");
+
+                    packet = new Packet (currSeqNo, byteOStream.toByteArray());
+
+                    packetCollection.add(packet);
+
+                    byteOStream.reset();
+
+                    currSeqNo++;
+                }
+            } catch (IOException ex) {
+                //Log.d(TAG, "Error in converting file to bytes");
+            }
+
+            try {
+                for (int i = 0; i < packetCollection.size(); i++) {
+                    //for (Packet p : packetCollection) {
+                    Packet p = packetCollection.get(i);
+                    SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+
+                    /*if (settings.getRandomLossProbability()) {
+                        System.out.println("Packet lost!");
+                        this.(settings.getDelay());
+                        continue;
+                    }*/
+
+                    command = ServerActivity.RECEIVE_BYTES;
+
+                    if (ackCollection.size() == 3) {
+                        for (Ack a : ackCollection) {
+                            System.out.println("Fast Retransmit : Ack Collection contains: " + a.getPacketNo());
+                        }
+
+                        byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
+
+                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+                        sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
+
+                        clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+
+                        if (settings.getRandomLossProbability()) {
+                            Packet sp = (Packet) Converter.toObject(lostPacket);
+                            System.out.println ("[" + new Date().toString() + "] Lost packet with sequence number: " + (sp.getSeqNo()-1));
+                            i--;
+                            continue;
+                        }
+
+
+                        clientSocket.send(sendPacket); // send bytes to Server
+
+                        System.out.println("Fast Retransmit: Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
+
+                        ackCollection.clear();
+
+                        ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
+
+                        clientSocket.receive(ackPacket);
+
+                        Ack ack = (Ack) Converter.toObject(ackPacket.getData());
+
+                        if (ack.getPacketNo() != -1) {
+                            ackCollection.add(ack);
+                            System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
+                        }
+                    }
+
+                    byte[] sendData = Converter.toBytes(p);
+
+                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+                    sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
+
+                    clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+                    clientSocket.send(sendPacket); // send bytes to Server
+
+                    System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + p.getSeqNo());
+
+                    ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
+
+                    clientSocket.receive(ackPacket);
+
+                    Ack ack = (Ack) Converter.toObject(ackPacket.getData());
+
+                    if (ack.getPacketNo() != -1) {
+                        ackCollection.add(ack);
+                        System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
+                    }
+
+                    /*if (settings.getRandomLossProbability()) {
+                        generateToast("Packet lost!");
+                        System.out.println("Packet lost!");
+                        i--;
+                        //System.out.println("Client: " + sendPacket.toString());
+                        //continue;
+                    } else {
+
+
+                    }*/
+
+                    if (!ackCollection.isEmpty()) {
+                        for (Ack a : ackCollection) {
+                            System.out.println("Fast Retransmit: Ack Collection contains: " + a.getPacketNo());
+                        }
+
+                        byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
+
+                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+                        sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
+
+                        clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+                        clientSocket.send(sendPacket); // send bytes to Server
+
+                        System.out.println("Fast Retransmit: Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
+
+                        ackCollection.clear();
+
+                        ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
+
+                        clientSocket.receive(ackPacket);
+
+                        ack = (Ack) Converter.toObject(ackPacket.getData());
+
+                        if (ack.getPacketNo() != -1) {
+                            ackCollection.add(ack);
+                            //System.out.println("Received Ack" + ack.getPacketNo() + "!");
+                        }
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            byteOStream.close();
+
+            command = PROCESS_FILE;
+            //command = ;
+            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
+            clientSocket.send(commandPacket);
+
+            clientSocket.close();
+
+            //Log.d(TAG, "Sent");
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
     }
 }
