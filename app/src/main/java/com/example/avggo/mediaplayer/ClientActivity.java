@@ -399,8 +399,8 @@ public class ClientActivity extends AppCompatActivity {
         private String command;
         private Context c;
 
-        private boolean timedOut = false;
-        private boolean received = false;
+        //private boolean timedOut = false;
+        //private boolean received = false;
         ClientTask(Context c, String addr, int port, String command){
             dstAddress = addr;
             dstPort = port;
@@ -412,7 +412,7 @@ public class ClientActivity extends AppCompatActivity {
         protected Void doInBackground(Void... arg0) {
 
             //Socket socket = null;
-            SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+            //SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
             DatagramSocket clientSocket;
             try {
@@ -446,12 +446,6 @@ public class ClientActivity extends AppCompatActivity {
                         }
                     }, settings.getTimeout());
                 }*/
-
-                if (timedOut) {
-                    // Resend?
-                    executeCommand(command);
-                    return null;
-                }
 
                 if (command.contains(ServerActivity.SEND_CURRENT_IMAGE))
                     receiveMedia(clientSocket, dstAddress, dstPort);

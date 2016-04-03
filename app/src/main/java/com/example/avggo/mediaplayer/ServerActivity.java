@@ -301,7 +301,7 @@ public class ServerActivity extends AppCompatActivity {
                                     if (!received) {
                                         timedOut = true;
                                         System.out.println("Timeout!");
-                                        generateToast("Timeout!");
+                                        //generateToast("Timeout!");
                                     }
                                 }
                             }, settings.getTimeout());
@@ -337,7 +337,7 @@ public class ServerActivity extends AppCompatActivity {
                                             else
                                                 acksInLine.add(new Ack(i));
 
-                                            if (settings.getVerbosity() == 1)
+                                            if (settings.getVerbosity() == 1 || settings.getVerbosity() == 2)
                                                 System.out.println("Lost packet with sequence number: " + i);
                                             if (settings.getVerbosity() == 3)
                                                 System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + i);
