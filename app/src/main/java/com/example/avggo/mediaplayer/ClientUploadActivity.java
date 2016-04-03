@@ -37,6 +37,8 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ClientUploadActivity extends AppCompatActivity {
 
@@ -276,6 +278,9 @@ public class ClientUploadActivity extends AppCompatActivity {
         private Context c;
         private DatagramSocket clientSocket;
 
+        boolean received = false;
+        boolean timedOut = false;
+
         public UploadTask (Context c, InetAddress ipAddr, int port, String fPath) throws SocketException {
             dstAddress = ipAddr;
             dstPort = port;
@@ -344,10 +349,10 @@ public class ClientUploadActivity extends AppCompatActivity {
             }
 
             try {
+                SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
                 for (int i = 0; i < packetCollection.size(); i++) {
                     Packet p = packetCollection.get(i);
-                    SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
-
+                    /*
                     if (ackCollection.size() == 3) {
                         for (Ack a : ackCollection) {
                             System.out.println("Fast Retransmit : Ack Collection contains: " + a.getPacketNo());
@@ -367,6 +372,26 @@ public class ClientUploadActivity extends AppCompatActivity {
                             System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
                         }
                     }
+                    */
+
+                    Timer t = new Timer();
+                    t.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            if (!received) {
+                                timedOut = true;
+                                System.out.println("Timed out!");
+                                generateToast("Timed out!");
+                            }
+                        }
+                    }, settings.getTimeout());
+
+                    if (settings.getRandomLossProbability()) {
+                        System.out.println("Packet lost!");
+                        generateToast("Packet lost!");
+
+                        continue;
+                    }
 
                     sendPacket(p);
 
@@ -381,23 +406,6 @@ public class ClientUploadActivity extends AppCompatActivity {
                         System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
                     }
                     timePacketReceived = System.currentTimeMillis();
-                }
-
-                while (!ackCollection.isEmpty()) {
-                    sendPacket(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
-
-                    ackCollection.clear();
-
-                    ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
-
-                    clientSocket.receive(ackPacket);
-
-                    Ack ack = (Ack) Converter.toObject(ackPacket.getData());
-
-                    if (ack.getPacketNo() != -1) {
-                            ackCollection.add(ack);
-                            System.out.println("Received Ack" + ack.getPacketNo() + "!");
-                    }
                 }
 
             } catch (ClassNotFoundException e) {

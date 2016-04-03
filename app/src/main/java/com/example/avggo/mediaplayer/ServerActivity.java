@@ -262,11 +262,7 @@ public class ServerActivity extends AppCompatActivity {
                                 return p1.getSeqNo() - p2.getSeqNo();
                             }
                         });
-                        /*
-                        for (Packet p : collectedPackets){
-                            System.out.println("Packet: " + p.getSeqNo());
-                        }
-                        */
+
                         int currByteIndex = 0;
                         accumulatedBytes = new byte[totalByteSize];
                         for (Packet p : collectedPackets) {
@@ -284,8 +280,6 @@ public class ServerActivity extends AppCompatActivity {
                         fileOStream.close();
 
                         prevSeqNo = -1;
-
-                        //continue;
                     }
 
                     else if (command.contains(RECEIVE_BYTES)) {
@@ -300,7 +294,6 @@ public class ServerActivity extends AppCompatActivity {
                             t.schedule(new TimerTask() {
                                 @Override
                                 public void run() {
-                                    // do stuff here
                                     if (!received) {
                                         timedOut = true;
                                         System.out.println("Timeout!");
@@ -328,21 +321,26 @@ public class ServerActivity extends AppCompatActivity {
                             //System.out.println("Packet lost!");
                             Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
 
-                            if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo() + 1)) {
+                            if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo())) {
                                 acksInLine.remove(0);
                             } else {
+                                if (prevSeqNo != -1) {
 
-                                if (((receivedPacket.getSeqNo() - 1) != prevSeqNo) && (prevSeqNo != -1)) {
+                                    if (receivedPacket.getSeqNo() - 1 != prevSeqNo) {
+                                        for (int i = prevSeqNo + 1; i < receivedPacket.getSeqNo(); i++) {
+                                            if (acksInLine.get(0).getPacketNo() == -1)
+                                                acksInLine.set(0, new Ack(i));
+                                            else
+                                                acksInLine.add(new Ack(i));
 
-                                    if (acksInLine.get(0).getPacketNo() == -1)
-                                        acksInLine.set(0, new Ack(prevSeqNo));
-                                    else
-                                        acksInLine.add(new Ack(prevSeqNo));
-
-                                    if(settings.getVerbosity() == 1)
-                                        System.out.println("Lost packet with sequence number: " + (receivedPacket.getSeqNo() - 1));
-                                    if(settings.getVerbosity() == 3)
-                                        System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + (receivedPacket.getSeqNo() - 1));
+                                            if (settings.getVerbosity() == 1)
+                                                System.out.println("Lost packet with sequence number: " + i);
+                                            if (settings.getVerbosity() == 3)
+                                                System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + i);
+                                        }
+                                    }
+                                } else if ((receivedPacket.getSeqNo() == 1) && (acksInLine.get(0).getPacketNo() == -1)) {
+                                    acksInLine.set(0, new Ack(0));
                                 }
                             }
 
