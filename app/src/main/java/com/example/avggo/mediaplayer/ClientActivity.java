@@ -442,7 +442,6 @@ public class ClientActivity extends AppCompatActivity {
                     t.cancel();
                 }*/
                 response = new String(receivePacket.getData());
-                System.out.println (response);
                 //System.out.println(response + " Ey");
 
                 ClientActivity.this.runOnUiThread(new Runnable() {
@@ -461,7 +460,6 @@ public class ClientActivity extends AppCompatActivity {
 
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
-                System.out.println("rawr");
             }
             return null;
         }

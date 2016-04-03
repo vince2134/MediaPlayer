@@ -8,7 +8,8 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:orientation="vertical"
-    tools:context=".ClientActivity" >
+    tools:context=".ClientActivity"
+    >
     <!--
     <EditText
         android:id="@+id/address"
@@ -139,29 +140,34 @@
         android:layout_height="wrap_content"
         android:text="Stop"
         android:id="@+id/stopBtn"
-        android:layout_alignTop="@+id/slideshowBtn"
+        android:layout_below="@+id/slideShowPauseEditText"
         android:layout_alignRight="@+id/slideShowPauseEditText"
         android:layout_alignEnd="@+id/slideShowPauseEditText"
-        android:layout_toEndOf="@+id/clientImageView"
-        android:layout_toRightOf="@+id/clientImageView" />
+        android:layout_toRightOf="@+id/slideshowBtn"
+        android:layout_toEndOf="@+id/slideshowBtn" />
 
     <Button
+        style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Simulate"
         android:id="@+id/btnSimulate"
         android:layout_below="@+id/stopBtn"
-        android:layout_alignLeft="@+id/stopBtn"
-        android:layout_alignStart="@+id/stopBtn"
         android:layout_alignRight="@+id/stopBtn"
-        android:layout_alignEnd="@+id/stopBtn" />
+        android:layout_alignEnd="@+id/stopBtn"
+        android:layout_alignLeft="@+id/stopBtn"
+        android:layout_alignStart="@+id/stopBtn" />
 
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/clientImageView"
-        android:layout_below="@+id/uploadBtn"
-        android:layout_centerHorizontal="true" />
+        android:layout_below="@+id/btnSimulate"
+        android:layout_alignLeft="@+id/uploadBtn"
+        android:layout_alignStart="@+id/uploadBtn"
+        android:layout_marginTop="27dp"
+        android:layout_marginLeft="-20dp"
+        />
 
 </RelativeLayout>
 
