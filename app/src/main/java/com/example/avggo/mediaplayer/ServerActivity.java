@@ -339,6 +339,7 @@ public class ServerActivity extends AppCompatActivity {
                                                 System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + i);
                                         }
                                     }
+
                                 } else if ((receivedPacket.getSeqNo() == 1) && (acksInLine.get(0).getPacketNo() == -1)) {
                                     acksInLine.set(0, new Ack(0));
                                 }
@@ -358,6 +359,14 @@ public class ServerActivity extends AppCompatActivity {
 
                             if (!(receivedPacket.getSeqNo() < prevSeqNo))
                                 prevSeqNo = receivedPacket.getSeqNo();
+
+                        if (acksInLine.get(0).getPacketNo() != -1) {
+                            System.out.print("Acumulated Acks: ");
+                            for (Ack a : acksInLine) {
+                                System.out.print(a.getPacketNo() + ", ");
+                            }
+                            System.out.println("");
+                        }
                         //}
                     }
                     else if (command.contains(CONNECT)) {
