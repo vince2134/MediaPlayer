@@ -161,7 +161,6 @@
         android:layout_height="wrap_content"
         android:id="@+id/clientImageView"
         android:layout_below="@+id/uploadBtn"
-        android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
 
 </RelativeLayout>
