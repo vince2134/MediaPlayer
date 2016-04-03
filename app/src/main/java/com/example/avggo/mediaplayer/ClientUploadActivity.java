@@ -381,19 +381,27 @@ public class ClientUploadActivity extends AppCompatActivity {
                             if (!received) {
                                 timedOut = true;
                                 System.out.println("Timed out!");
-                                generateToast("Timed out!");
+                                //generateToast("Timed out!");
                             }
                         }
                     }, settings.getTimeout());
 
                     if (settings.getRandomLossProbability()) {
-                        System.out.println("Packet lost!");
-                        generateToast("Packet lost!");
+                        if (settings.getVerbosity() == 1 || settings.getVerbosity() == 2)
+                            System.out.println("Lost packet with sequence number: " + p.getSeqNo());
+                        else if (settings.getVerbosity() == 3)
+                            System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + p.getSeqNo());
 
                         continue;
                     }
 
                     sendPacket(p);
+                    if (settings.getVerbosity() == 2) {
+                        System.out.println("Sent packet with sequence number: " + p.getSeqNo());
+                    }
+                    else if (settings.getVerbosity() == 3) {
+                        System.out.println("[" + new Date().toString() + "] Sent packet with sequence number: " + p.getSeqNo());
+                    }
 
                     ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
 
@@ -403,7 +411,13 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     if (ack.getPacketNo() != -1) {
                         ackCollection.add(ack);
-                        System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
+                        if (settings.getVerbosity() == 2) {
+                            System.out.println("Received ack with sequence number: " + ack.getPacketNo());
+                        }
+                        else if (settings.getVerbosity() == 3) {
+                            System.out.println("[" + new Date().toString() + "] Received ack with sequence number: " + ack.getPacketNo());
+                        }
+                            //System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
                     }
                     timePacketReceived = System.currentTimeMillis();
                 }
