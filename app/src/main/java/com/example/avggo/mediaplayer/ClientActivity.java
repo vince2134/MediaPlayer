@@ -47,6 +47,9 @@ public class ClientActivity extends AppCompatActivity {
     ImageView imageView;
     ProgressDialog progDialog;
 
+    private boolean timedOut = false;
+    private boolean received = false;
+
     String ipAddress;
     int portNumber;
 
@@ -274,24 +277,59 @@ public class ClientActivity extends AppCompatActivity {
         ArrayList<Packet> collectedPackets = new ArrayList<Packet>();
 
             while (command.contains(ServerActivity.RECEIVE_BYTES)) {
-                clientSocket.receive(receiveFragment);
+                try {
+                    Timer t = new Timer();
+                    t.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            if (!received) {
+                                timedOut = true;
+                                System.out.println("Timeout!");
+                                generateToast("Timeout!");
+                            }
+                        }
+                    }, settings.getTimeout());
+
+                    if (timedOut) {
+                        // Resend?
+
+                    }
+
+                    clientSocket.receive(receiveFragment);
+
+                    received = true;
+                    if (t != null) {
+                        t.cancel();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                //if (settings.getRandomLossProbability()) {
+                //System.out.println("Packet lost!");
                 Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
 
-                if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo() + 1)) {
+                if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo())) {
                     acksInLine.remove(0);
                 } else {
+                    if (prevSeqNo != -1) {
 
-                    if (((receivedPacket.getSeqNo() - 1) != prevSeqNo) && (prevSeqNo != -1)) {
+                        if (receivedPacket.getSeqNo() - 1 != prevSeqNo) {
+                            for (int i = prevSeqNo + 1; i < receivedPacket.getSeqNo(); i++) {
+                                if (acksInLine.get(0).getPacketNo() == -1)
+                                    acksInLine.set(0, new Ack(i));
+                                else
+                                    acksInLine.add(new Ack(i));
 
-                        if (acksInLine.get(0).getPacketNo() == -1)
-                            acksInLine.set(0, new Ack(prevSeqNo));
-                        else
-                            acksInLine.add(new Ack(prevSeqNo));
+                                if (settings.getVerbosity() == 1)
+                                    System.out.println("Lost packet with sequence number: " + i);
+                                if (settings.getVerbosity() == 3)
+                                    System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + i);
+                            }
+                        }
 
-                        if (settings.getVerbosity() == 1)
-                            System.out.println("Lost packet with sequence number: " + (receivedPacket.getSeqNo() - 1));
-                        if (settings.getVerbosity() == 3)
-                            System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + (receivedPacket.getSeqNo() - 1));
+                    } else if ((receivedPacket.getSeqNo() == 1) && (acksInLine.get(0).getPacketNo() == -1)) {
+                        acksInLine.set(0, new Ack(0));
                     }
                 }
 
@@ -305,12 +343,20 @@ public class ClientActivity extends AppCompatActivity {
                 clientSocket.send(ackPacket);
 
                 collectedPackets.add(receivedPacket);
-
                 totalByteSize += receivedPacket.getData().length;
 
                 if (!(receivedPacket.getSeqNo() < prevSeqNo))
                     prevSeqNo = receivedPacket.getSeqNo();
+
+                if (acksInLine.get(0).getPacketNo() != -1) {
+                    System.out.print("Acumulated Acks: ");
+                    for (Ack a : acksInLine) {
+                        System.out.print(a.getPacketNo() + ", ");
+                    }
+                    System.out.println("");
+                }
                 //}
+
                 clientSocket.receive(receiveCommand);
 
                 command = new String(receiveCommand.getData());

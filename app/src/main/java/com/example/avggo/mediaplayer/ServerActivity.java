@@ -60,6 +60,9 @@ public class ServerActivity extends AppCompatActivity {
     DatagramSocket serverSocket;
     static int SocketServerPORT;
 
+    public long timePacketSent = 0;
+    public long timePacketReceived = 0;
+
     ArrayList<File> fileCollection = new ArrayList<File>();
 
     //Hash Keys
@@ -534,23 +537,46 @@ public class ServerActivity extends AppCompatActivity {
         return ip;
     }
 
-    class UploadTask extends AsyncTask<Void, Void, Void> {
+    class UploadTask extends AsyncTask<Void, Void, Void>{
         private InetAddress dstAddress;
         private int dstPort;
         private String fPath;
         private Context c;
+        private DatagramSocket clientSocket;
 
-        public UploadTask (Context c, InetAddress ipAddr, int port, String fPath) {
+        boolean sentTimedOut = false;
+
+        SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+
+        public UploadTask (Context c, InetAddress ipAddr, int port, String fPath) throws SocketException {
             dstAddress = ipAddr;
             dstPort = port;
             this.fPath = fPath;
             this.c = c;
+
+            clientSocket = new DatagramSocket();
+        }
+
+        private void sendPacket (Packet packet) throws IOException, InterruptedException {
+            Thread.sleep(Math.abs(((timePacketReceived - timePacketSent) / 2) + settings.getDelay()));
+
+            byte[] sendData = Converter.toBytes(packet);
+
+            String command = ServerActivity.RECEIVE_BYTES;
+
+            DatagramPacket commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, dstAddress, dstPort);
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, dstAddress, dstPort);
+
+            clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+            clientSocket.send(sendPacket); // send bytes to Server
+
+            System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + packet.getSeqNo());
+            timePacketSent = System.currentTimeMillis();
         }
 
         protected Void doInBackground (Void... arg0) {
             try {
                 sendFile(new File(fPath), dstAddress, dstPort);
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -560,18 +586,12 @@ public class ServerActivity extends AppCompatActivity {
 
         @TargetApi(Build.VERSION_CODES.KITKAT)
         private void sendFile(File f, InetAddress ipAddr, int dstPort) throws IOException {
-            DatagramSocket clientSocket;
-            clientSocket = new DatagramSocket();
-
             int currSeqNo = 0;
 
             ArrayList<Packet> packetCollection = new ArrayList<Packet>();
             ArrayList<Ack> ackCollection = new ArrayList<Ack>();
 
             String command = "";
-            Packet packet;
-            DatagramPacket sendPacket;
-            DatagramPacket commandPacket;
             DatagramPacket ackPacket;
             byte[] buffer = new byte[1500];
             byte[] receivedAck = new byte[1024];
@@ -585,41 +605,64 @@ public class ServerActivity extends AppCompatActivity {
 
                     System.out.println("read " + readNum + " bytes,");
 
-                    packet = new Packet (currSeqNo, byteOStream.toByteArray());
-
-                    packetCollection.add(packet);
+                    packetCollection.add(new Packet (currSeqNo, byteOStream.toByteArray()));
 
                     byteOStream.reset();
 
                     currSeqNo++;
                 }
             } catch (IOException ex) {
-                //Log.d(TAG, "Error in converting file to bytes");
             }
 
             try {
                 for (int i = 0; i < packetCollection.size(); i++) {
-                    System.out.println ("Packet collection size: " + packetCollection.size());
-                    //for (Packet p : packetCollection) {
                     Packet p = packetCollection.get(i);
-                    SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
-                    /*if (settings.getRandomLossProbability()) {
-                        System.out.println("Packet lost!");
-                        this.(settings.getDelay());
+                    if (settings.getRandomLossProbability()) {
+                        if (settings.getVerbosity() == 1 || settings.getVerbosity() == 2)
+                            System.out.println("Lost packet with sequence number: " + p.getSeqNo());
+                        else if (settings.getVerbosity() == 3)
+                            System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + p.getSeqNo());
+
+                        if (!ackCollection.isEmpty()) {
+                            final Packet pk = p;
+                            Timer t = new Timer();
+                            t.schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        sendPacket(pk);
+                                        sentTimedOut = true;
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }, settings.getTimeout());
+                        }
+
                         continue;
-                    }*/
+                    }
 
-                    command = RECEIVE_BYTES;
-                    byte[] sendData = Converter.toBytes(p);
+                    if (ackCollection.size() == 3) {
+                        for (Ack a : ackCollection) {
+                            System.out.println("Fast Retransmit : Ack Collection contains: " + a.getPacketNo());
+                        }
+                        sendPacket(packetCollection.get(ackCollection.get(0).getPacketNo()));
 
-                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                    sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
+                        ackCollection.clear();
+                    }
 
-                    clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-                    clientSocket.send(sendPacket); // send bytes to Server
-
-                    System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + p.getSeqNo());
+                    if (!sentTimedOut) {
+                        sendPacket(p);
+                        if (settings.getVerbosity() == 2) {
+                            System.out.println("Sent packet with sequence number: " + p.getSeqNo());
+                        }
+                        else if (settings.getVerbosity() == 3) {
+                            System.out.println("[" + new Date().toString() + "] Sent packet with sequence number: " + p.getSeqNo());
+                        }
+                    }
 
                     ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
 
@@ -629,45 +672,42 @@ public class ServerActivity extends AppCompatActivity {
 
                     if (ack.getPacketNo() != -1) {
                         ackCollection.add(ack);
-                        System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
+                        if (settings.getVerbosity() == 2) {
+                            System.out.println("Received ack with sequence number: " + ack.getPacketNo());
+                        }
+                        else if (settings.getVerbosity() == 3) {
+                            System.out.println("[" + new Date().toString() + "] Received ack with sequence number: " + ack.getPacketNo());
+                        }
+                        //System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
                     }
-
-                    /*if (settings.getRandomLossProbability()) {
-                        generateToast("Packet lost!");
-                        System.out.println("Packet lost!");
-                        i--;
-                        //System.out.println("Client: " + sendPacket.toString());
-                        //continue;
-                    } else {
-
-
-                    }*/
+                    timePacketReceived = System.currentTimeMillis();
                 }
+
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
-                System.out.println ("rawr");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
 
             byteOStream.close();
 
-            command = PROCESS_FILE;
-            //command = ;
-            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-            clientSocket.send(commandPacket);
+            command = ServerActivity.PROCESS_FILE;
+            clientSocket.send(new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort));
 
-            clientSocket.close();
-
-            //Log.d(TAG, "Sent");
+            //clientSocket.close();
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+
+            clientSocket.close();
         }
     }
 }
