@@ -42,7 +42,7 @@ public class ClientActivity extends AppCompatActivity {
 
     TextView fileName;
     EditText slideShowLength;
-    Button nextBtn, prevBtn, slideshowBtn, stopBtn, uploadBtn, simulateBtn;
+    Button nextBtn, prevBtn, slideshowBtn, stopBtn, uploadBtn, simulateBtn, dispImgBtn;
     Bitmap bmp;
     ImageView imageView;
     ProgressDialog progDialog;
@@ -84,6 +84,7 @@ public class ClientActivity extends AppCompatActivity {
         stopBtn = (Button) findViewById(R.id.stopBtn);
         uploadBtn = (Button) findViewById(R.id.uploadBtn);
         simulateBtn = (Button) findViewById(R.id.btnSimulate);
+        dispImgBtn = (Button) findViewById(R.id.displayImageBtn);
 
         imageView = (ImageView) findViewById(R.id.clientImageView);
 
@@ -105,6 +106,13 @@ public class ClientActivity extends AppCompatActivity {
                 ClientTask clientTask = new ClientTask(ipAddress, portNumber, ServerActivity.NEXT);
                 clientTask.execute();*/
                 executeCommand(ServerActivity.NEXT);
+            }
+        });
+
+        dispImgBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                executeCommand(ServerActivity.SEND_CURRENT_IMAGE);
             }
         });
 
@@ -265,41 +273,6 @@ public class ClientActivity extends AppCompatActivity {
         int totalByteSize = 0;
         ArrayList<Packet> collectedPackets = new ArrayList<Packet>();
 
-            //this.sleep(settings.getDelay());
-
-            /*
-            try {
-                Timer t = new Timer();
-                t.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        // do stuff here
-                        if (!received) {
-                            timedOut = true;
-                            System.out.println("Timeout!");
-                            generateToast("Timeout!");
-                        }
-                    }
-                }, settings.getTimeout());
-
-                if (timedOut) {
-                    // Resend?
-
-                }
-
-                serverSocket.receive(receiveFragment);
-
-                received = true;
-                if (t != null) {
-                    t.cancel();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            */
-
-            //if (settings.getRandomLossProbability()) {
-            //System.out.println("Packet lost!");
             while (command.contains(ServerActivity.RECEIVE_BYTES)) {
                 clientSocket.receive(receiveFragment);
                 Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
@@ -412,7 +385,6 @@ public class ClientActivity extends AppCompatActivity {
                 }*/
 
                 clientSocket.send(sendPacket);
-                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
                 /*Timer t = new Timer();
                 if (!command.contains(ServerActivity.CONNECT)) {
@@ -435,22 +407,26 @@ public class ClientActivity extends AppCompatActivity {
                     return null;
                 }
 
-                clientSocket.receive(receivePacket);
+                if (command.contains(ServerActivity.SEND_CURRENT_IMAGE))
+                    receiveMedia(clientSocket, dstAddress, dstPort);
+                else {
+                    DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+
+                    clientSocket.receive(receivePacket);
                 /*received = true;
                 if (t != null) {
                     t.cancel();
                 }*/
-                response = new String(receivePacket.getData());
-                //System.out.println(response + " Ey");
+                    response = new String(receivePacket.getData());
+                    //System.out.println(response + " Ey");
 
-                ClientActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        setFileName(response);
-                    }
-                });
-
-                receiveMedia(clientSocket, dstAddress, dstPort);
+                    ClientActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            setFileName(response);
+                        }
+                    });
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 generateToast("Could not connect to server");
@@ -467,17 +443,19 @@ public class ClientActivity extends AppCompatActivity {
         protected void onPreExecute() {
             super.onPreExecute();
 
-            progDialog = new ProgressDialog(c);
-            progDialog.setMessage("Buffering...");
-            progDialog.setCanceledOnTouchOutside(false);
-            progDialog.show();
+            if (command.contains(ServerActivity.SEND_CURRENT_IMAGE)) {
+                progDialog = new ProgressDialog(c);
+                progDialog.setMessage("Buffering...");
+                progDialog.setCanceledOnTouchOutside(false);
+                progDialog.show();
+            }
         }
 
         @Override
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
-
-            progDialog.dismiss();
+            if (command.contains(ServerActivity.SEND_CURRENT_IMAGE))
+                progDialog.dismiss();
         }
     }
 }

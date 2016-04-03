@@ -70,6 +70,7 @@ public class ServerActivity extends AppCompatActivity {
     public static final String CONNECT = "Connect";
     public static final String NEXT = "Next";
     public static final String PREVIOUS = "Previous";
+    public static final String SEND_CURRENT_IMAGE = "Send Current Image";
     public static final String SLIDESHOW = "Slideshow";
     public static final String RECEIVE_BYTES = "Receive Bytes";
     public static final String RESTART_TOTAL_BYTES = "Restart Total Bytes";
@@ -380,28 +381,12 @@ public class ServerActivity extends AppCompatActivity {
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
-                        String response = fileCollection.get(pic_index).getName();
+                        String response = "Server currently displaying: "+fileCollection.get(pic_index).getName();
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
 
-                        UploadTask uploadTask = new UploadTask(ServerActivity.this, IPAddress, port, fileCollection.get(pic_index).getPath());
-                        uploadTask.execute();
-
-                        ServerActivity.this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    FileInputStream in = new FileInputStream(fileCollection.get(pic_index));
-                                    Drawable d = Drawable.createFromStream(in, null);
-                                    Bitmap b = ((BitmapDrawable) d).getBitmap();
-                                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
-                                    image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
+                        nextImage();
                     }
                     else if (command.contains(PREVIOUS)) {
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.slide_in_left);
@@ -415,28 +400,12 @@ public class ServerActivity extends AppCompatActivity {
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
-                        String response = fileCollection.get(pic_index).getName();
+                        String response = "Server currently displaying: "+fileCollection.get(pic_index).getName();
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
 
-                        UploadTask uploadTask = new UploadTask(ServerActivity.this, IPAddress, port, fileCollection.get(pic_index).getPath());
-                        uploadTask.execute();
-
-                        ServerActivity.this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    FileInputStream in = new FileInputStream(fileCollection.get(pic_index));
-                                    Drawable d = Drawable.createFromStream(in, null);
-                                    Bitmap b = ((BitmapDrawable) d).getBitmap();
-                                    Bitmap bitmapResized = Bitmap.createScaledBitmap(b, 185 * 4, 278 * 4, false);
-                                    image.setImageDrawable(new BitmapDrawable(getResources(), bitmapResized));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
+                        nextImage();
                     }
                     else if (command.contains(NEXT)) {
 
@@ -451,13 +420,10 @@ public class ServerActivity extends AppCompatActivity {
 
                         InetAddress IPAddress = receivePacket.getAddress();
                         int port = receivePacket.getPort();
-                        String response = fileCollection.get(pic_index).getName();
+                        String response = "Server currently displaying: "+fileCollection.get(pic_index).getName();
                         sendData = response.getBytes();
                         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                         serverSocket.send(sendPacket);
-
-                        UploadTask uploadTask = new UploadTask(ServerActivity.this, IPAddress, port, fileCollection.get(pic_index).getPath());
-                        uploadTask.execute();
 
                         nextImage();
                     }
@@ -468,6 +434,11 @@ public class ServerActivity extends AppCompatActivity {
                         //startSlideShow(secs, runnable);
 
                         startSlideShow(secs);
+                    }
+                    else if (command.contains(SEND_CURRENT_IMAGE)) {
+                        System.out.println (fileCollection.get(pic_index).getPath());
+                        UploadTask uploadTask = new UploadTask(ServerActivity.this, receivePacket.getAddress(), receivePacket.getPort(), fileCollection.get(pic_index).getPath());
+                        uploadTask.execute();
                     }
 
                 }
@@ -578,7 +549,6 @@ public class ServerActivity extends AppCompatActivity {
 
         protected Void doInBackground (Void... arg0) {
             try {
-
                 sendFile(new File(fPath), dstAddress, dstPort);
 
             } catch (Exception e) {
@@ -629,6 +599,7 @@ public class ServerActivity extends AppCompatActivity {
 
             try {
                 for (int i = 0; i < packetCollection.size(); i++) {
+                    System.out.println ("Packet collection size: " + packetCollection.size());
                     //for (Packet p : packetCollection) {
                     Packet p = packetCollection.get(i);
                     SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
@@ -639,46 +610,7 @@ public class ServerActivity extends AppCompatActivity {
                         continue;
                     }*/
 
-                    command = ServerActivity.RECEIVE_BYTES;
-
-                    if (ackCollection.size() == 3) {
-                        for (Ack a : ackCollection) {
-                            System.out.println("Fast Retransmit : Ack Collection contains: " + a.getPacketNo());
-                        }
-
-                        byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
-
-                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                        sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
-
-                        clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-
-                        if (settings.getRandomLossProbability()) {
-                            Packet sp = (Packet) Converter.toObject(lostPacket);
-                            System.out.println ("[" + new Date().toString() + "] Lost packet with sequence number: " + (sp.getSeqNo()-1));
-                            i--;
-                            continue;
-                        }
-
-
-                        clientSocket.send(sendPacket); // send bytes to Server
-
-                        System.out.println("Fast Retransmit: Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
-
-                        ackCollection.clear();
-
-                        ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
-
-                        clientSocket.receive(ackPacket);
-
-                        Ack ack = (Ack) Converter.toObject(ackPacket.getData());
-
-                        if (ack.getPacketNo() != -1) {
-                            ackCollection.add(ack);
-                            System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
-                        }
-                    }
-
+                    command = RECEIVE_BYTES;
                     byte[] sendData = Converter.toBytes(p);
 
                     commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
@@ -710,38 +642,10 @@ public class ServerActivity extends AppCompatActivity {
 
 
                     }*/
-
-                    if (!ackCollection.isEmpty()) {
-                        for (Ack a : ackCollection) {
-                            System.out.println("Fast Retransmit: Ack Collection contains: " + a.getPacketNo());
-                        }
-
-                        byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
-
-                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                        sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
-
-                        clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-                        clientSocket.send(sendPacket); // send bytes to Server
-
-                        System.out.println("Fast Retransmit: Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
-
-                        ackCollection.clear();
-
-                        ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
-
-                        clientSocket.receive(ackPacket);
-
-                        ack = (Ack) Converter.toObject(ackPacket.getData());
-
-                        if (ack.getPacketNo() != -1) {
-                            ackCollection.add(ack);
-                            //System.out.println("Received Ack" + ack.getPacketNo() + "!");
-                        }
-                    }
                 }
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
+                System.out.println ("rawr");
             }
 
             byteOStream.close();
