@@ -278,8 +278,9 @@ public class ClientUploadActivity extends AppCompatActivity {
         private Context c;
         private DatagramSocket clientSocket;
 
-        boolean received = false;
-        boolean timedOut = false;
+        boolean sentTimedOut = false;
+
+        SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
         public UploadTask (Context c, InetAddress ipAddr, int port, String fPath) throws SocketException {
             dstAddress = ipAddr;
@@ -291,7 +292,7 @@ public class ClientUploadActivity extends AppCompatActivity {
         }
 
         private void sendPacket (Packet packet) throws IOException, InterruptedException {
-            Thread.sleep((timePacketReceived - timePacketSent) / 2);
+            Thread.sleep(Math.abs(((timePacketReceived - timePacketSent) / 2) + settings.getDelay()));
 
             byte[] sendData = Converter.toBytes(packet);
 
@@ -349,42 +350,8 @@ public class ClientUploadActivity extends AppCompatActivity {
             }
 
             try {
-                SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
                 for (int i = 0; i < packetCollection.size(); i++) {
                     Packet p = packetCollection.get(i);
-                    /*
-                    if (ackCollection.size() == 3) {
-                        for (Ack a : ackCollection) {
-                            System.out.println("Fast Retransmit : Ack Collection contains: " + a.getPacketNo());
-                        }
-                        sendPacket(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
-
-                        ackCollection.clear();
-
-                        ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
-
-                        clientSocket.receive(ackPacket);
-
-                        Ack ack = (Ack) Converter.toObject(ackPacket.getData());
-
-                        if (ack.getPacketNo() != -1) {
-                            ackCollection.add(ack);
-                            System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
-                        }
-                    }
-                    */
-
-                    Timer t = new Timer();
-                    t.schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            if (!received) {
-                                timedOut = true;
-                                System.out.println("Timed out!");
-                                //generateToast("Timed out!");
-                            }
-                        }
-                    }, settings.getTimeout());
 
                     if (settings.getRandomLossProbability()) {
                         if (settings.getVerbosity() == 1 || settings.getVerbosity() == 2)
@@ -392,15 +359,44 @@ public class ClientUploadActivity extends AppCompatActivity {
                         else if (settings.getVerbosity() == 3)
                             System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + p.getSeqNo());
 
+                        if (!ackCollection.isEmpty()) {
+                            final Packet pk = p;
+                            Timer t = new Timer();
+                            t.schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        sendPacket(pk);
+                                        sentTimedOut = true;
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }, settings.getTimeout());
+                        }
+
                         continue;
                     }
 
-                    sendPacket(p);
-                    if (settings.getVerbosity() == 2) {
-                        System.out.println("Sent packet with sequence number: " + p.getSeqNo());
+                    if (ackCollection.size() == 3) {
+                        for (Ack a : ackCollection) {
+                            System.out.println("Fast Retransmit : Ack Collection contains: " + a.getPacketNo());
+                        }
+                        sendPacket(packetCollection.get(ackCollection.get(0).getPacketNo()));
+
+                        ackCollection.clear();
                     }
-                    else if (settings.getVerbosity() == 3) {
-                        System.out.println("[" + new Date().toString() + "] Sent packet with sequence number: " + p.getSeqNo());
+
+                    if (!sentTimedOut) {
+                        sendPacket(p);
+                        if (settings.getVerbosity() == 2) {
+                            System.out.println("Sent packet with sequence number: " + p.getSeqNo());
+                        }
+                        else if (settings.getVerbosity() == 3) {
+                            System.out.println("[" + new Date().toString() + "] Sent packet with sequence number: " + p.getSeqNo());
+                        }
                     }
 
                     ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
@@ -417,7 +413,7 @@ public class ClientUploadActivity extends AppCompatActivity {
                         else if (settings.getVerbosity() == 3) {
                             System.out.println("[" + new Date().toString() + "] Received ack with sequence number: " + ack.getPacketNo());
                         }
-                            //System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
+                        //System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
                     }
                     timePacketReceived = System.currentTimeMillis();
                 }
@@ -436,7 +432,7 @@ public class ClientUploadActivity extends AppCompatActivity {
             command = ServerActivity.RESTART_TOTAL_BYTES;
             clientSocket.send(new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort));
 
-            clientSocket.close();
+            //clientSocket.close();
 
             Log.d(TAG, "Sent");
         }
@@ -456,6 +452,8 @@ public class ClientUploadActivity extends AppCompatActivity {
             super.onPostExecute(aVoid);
 
             progDialog.dismiss();
+
+            clientSocket.close();
 
             finish();
         }
