@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,7 +38,7 @@ public class ClientActivity extends AppCompatActivity {
     EditText slideShowLength;
     Button nextBtn, prevBtn, slideshowBtn, stopBtn, uploadBtn, simulateBtn;
     Bitmap bmp;
-    //ImageView image;
+    ImageView image;
 
     public static final String PROCESS_BITMAP = "Process Bitmap";
 
@@ -78,6 +79,8 @@ public class ClientActivity extends AppCompatActivity {
         stopBtn = (Button) findViewById(R.id.stopBtn);
         uploadBtn = (Button) findViewById(R.id.uploadBtn);
         simulateBtn = (Button) findViewById(R.id.btnSimulate);
+
+        image = (ImageView) findViewById(R.id.clientImageView);
 
         prevBtn.setOnClickListener(new View.OnClickListener() {
 
