@@ -1,8 +1,6 @@
 package com.example.avggo.mediaplayer;
 
 import android.annotation.TargetApi;
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ContentUris;
 import android.content.Context;
@@ -12,7 +10,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
-import android.os.Handler;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
@@ -36,10 +33,10 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class ClientUploadActivity extends AppCompatActivity {
 
@@ -49,6 +46,9 @@ public class ClientUploadActivity extends AppCompatActivity {
 
     String ipAddress;
     int portNumber;
+
+    public long timePacketSent = 0;
+    public long timePacketReceived = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +76,14 @@ public class ClientUploadActivity extends AppCompatActivity {
         uploadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                UploadTask uploadTask = new UploadTask(ClientUploadActivity.this, ipAddress, portNumber, filePath.getText().toString());
+                UploadTask uploadTask = null;
+                try {
+                    uploadTask = new UploadTask(ClientUploadActivity.this, InetAddress.getByName(ipAddress), portNumber, filePath.getText().toString());
+                } catch (SocketException e) {
+                    e.printStackTrace();
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
                 uploadTask.execute();
             }
         });
@@ -254,7 +261,7 @@ public class ClientUploadActivity extends AppCompatActivity {
 
     private void generateToast(String message) {
         final String text = message;
-        ClientUploadActivity.this.runOnUiThread( new Runnable() {
+        ClientUploadActivity.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
@@ -263,24 +270,41 @@ public class ClientUploadActivity extends AppCompatActivity {
     }
 
     class UploadTask extends AsyncTask<Void, Void, Void>{
-        private String dstAddress;
+        private InetAddress dstAddress;
         private int dstPort;
         private String fPath;
         private Context c;
+        private DatagramSocket clientSocket;
 
-        public UploadTask (Context c, String ipAddr, int port, String fPath) {
+        public UploadTask (Context c, InetAddress ipAddr, int port, String fPath) throws SocketException {
             dstAddress = ipAddr;
             dstPort = port;
             this.fPath = fPath;
             this.c = c;
+
+            clientSocket = new DatagramSocket();
+        }
+
+        private void sendPacket (Packet packet) throws IOException, InterruptedException {
+            Thread.sleep((timePacketReceived - timePacketSent) / 2);
+
+            byte[] sendData = Converter.toBytes(packet);
+
+            String command = ServerActivity.RECEIVE_BYTES;
+
+            DatagramPacket commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, dstAddress, dstPort);
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, dstAddress, dstPort);
+
+            clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+            clientSocket.send(sendPacket); // send bytes to Server
+
+            System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + packet.getSeqNo());
+            timePacketSent = System.currentTimeMillis();
         }
 
         protected Void doInBackground (Void... arg0) {
             try {
-                InetAddress IPAddress = InetAddress.getByName(dstAddress);
-
-                sendFile(new File(fPath), IPAddress, dstPort);
-
+                sendFile(new File(fPath), dstAddress, dstPort);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -290,18 +314,12 @@ public class ClientUploadActivity extends AppCompatActivity {
 
         @TargetApi(Build.VERSION_CODES.KITKAT)
         private void sendFile(File f, InetAddress ipAddr, int dstPort) throws IOException {
-            DatagramSocket clientSocket;
-            clientSocket = new DatagramSocket();
-
             int currSeqNo = 0;
 
             ArrayList<Packet> packetCollection = new ArrayList<Packet>();
             ArrayList<Ack> ackCollection = new ArrayList<Ack>();
 
             String command = "";
-            Packet packet;
-            DatagramPacket sendPacket;
-            DatagramPacket commandPacket;
             DatagramPacket ackPacket;
             byte[] buffer = new byte[1500];
             byte[] receivedAck = new byte[1024];
@@ -315,9 +333,7 @@ public class ClientUploadActivity extends AppCompatActivity {
 
                     System.out.println("read " + readNum + " bytes,");
 
-                    packet = new Packet (currSeqNo, byteOStream.toByteArray());
-
-                    packetCollection.add(packet);
+                    packetCollection.add(new Packet (currSeqNo, byteOStream.toByteArray()));
 
                     byteOStream.reset();
 
@@ -329,41 +345,14 @@ public class ClientUploadActivity extends AppCompatActivity {
 
             try {
                 for (int i = 0; i < packetCollection.size(); i++) {
-                //for (Packet p : packetCollection) {
                     Packet p = packetCollection.get(i);
                     SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
-
-                    /*if (settings.getRandomLossProbability()) {
-                        System.out.println("Packet lost!");
-                        this.(settings.getDelay());
-                        continue;
-                    }*/
-
-                    command = ServerActivity.RECEIVE_BYTES;
 
                     if (ackCollection.size() == 3) {
                         for (Ack a : ackCollection) {
                             System.out.println("Fast Retransmit : Ack Collection contains: " + a.getPacketNo());
                         }
-
-                        byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
-
-                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                        sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
-
-                        clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-
-                        if (settings.getRandomLossProbability()) {
-                            Packet sp = (Packet) Converter.toObject(lostPacket);
-                            System.out.println ("[" + new Date().toString() + "] Lost packet with sequence number: " + (sp.getSeqNo()-1));
-                            i--;
-                            continue;
-                        }
-
-
-                        clientSocket.send(sendPacket); // send bytes to Server
-
-                        System.out.println("Fast Retransmit: Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
+                        sendPacket(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
 
                         ackCollection.clear();
 
@@ -379,15 +368,7 @@ public class ClientUploadActivity extends AppCompatActivity {
                         }
                     }
 
-                    byte[] sendData = Converter.toBytes(p);
-
-                    commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                    sendPacket = new DatagramPacket(sendData, sendData.length, ipAddr, dstPort);
-
-                    clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-                    clientSocket.send(sendPacket); // send bytes to Server
-
-                    System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + p.getSeqNo());
+                    sendPacket(p);
 
                     ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
 
@@ -399,62 +380,39 @@ public class ClientUploadActivity extends AppCompatActivity {
                         ackCollection.add(ack);
                         System.out.println("Fast Retransmit: Received Ack" + ack.getPacketNo() + "!");
                     }
+                    timePacketReceived = System.currentTimeMillis();
+                }
 
-                    /*if (settings.getRandomLossProbability()) {
-                        generateToast("Packet lost!");
-                        System.out.println("Packet lost!");
-                        i--;
-                        //System.out.println("Client: " + sendPacket.toString());
-                        //continue;
-                    } else {
+                while (!ackCollection.isEmpty()) {
+                    sendPacket(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
 
+                    ackCollection.clear();
 
-                    }*/
+                    ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
 
-                    if (!ackCollection.isEmpty()) {
-                        for (Ack a : ackCollection) {
-                            System.out.println("Fast Retransmit: Ack Collection contains: " + a.getPacketNo());
-                        }
+                    clientSocket.receive(ackPacket);
 
-                        byte[] lostPacket = Converter.toBytes(packetCollection.get(ackCollection.get(0).getPacketNo() + 1));
+                    Ack ack = (Ack) Converter.toObject(ackPacket.getData());
 
-                        commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-                        sendPacket = new DatagramPacket(lostPacket, lostPacket.length, ipAddr, dstPort);
-
-                        clientSocket.send(commandPacket); // command Server to Receive incoming bytes
-                        clientSocket.send(sendPacket); // send bytes to Server
-
-                        System.out.println("Fast Retransmit: Client sent packet with seqno" + packetCollection.get(ackCollection.get(0).getPacketNo() + 1).getSeqNo());
-
-                        ackCollection.clear();
-
-                        ackPacket = new DatagramPacket(receivedAck, receivedAck.length);
-
-                        clientSocket.receive(ackPacket);
-
-                        ack = (Ack) Converter.toObject(ackPacket.getData());
-
-                        if (ack.getPacketNo() != -1) {
+                    if (ack.getPacketNo() != -1) {
                             ackCollection.add(ack);
-                            //System.out.println("Received Ack" + ack.getPacketNo() + "!");
-                        }
+                            System.out.println("Received Ack" + ack.getPacketNo() + "!");
                     }
                 }
+
             } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
             byteOStream.close();
 
-            //command = "Process File";
             command = ServerActivity.PROCESS_FILE;
-            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-            clientSocket.send(commandPacket);
+            clientSocket.send(new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort));
 
-            //command = "Restart Total Bytes";
             command = ServerActivity.RESTART_TOTAL_BYTES;
-            commandPacket = new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort);
-            clientSocket.send(commandPacket);
+            clientSocket.send(new DatagramPacket(command.getBytes(), command.getBytes().length, ipAddr, dstPort));
 
             clientSocket.close();
 
