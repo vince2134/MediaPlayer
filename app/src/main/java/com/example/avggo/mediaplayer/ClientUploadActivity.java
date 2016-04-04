@@ -296,7 +296,8 @@ public class ClientUploadActivity extends AppCompatActivity {
         }
 
         private void sendPacket (Packet packet) throws IOException, InterruptedException {
-            Thread.sleep(Math.abs(((timePacketReceived - timePacketSent) / 2) + settings.getDelay()));
+            System.out.println ("Client delayed for " + Math.abs(((timePacketReceived - timePacketSent)) + settings.getDelay()) + "ms for Flow Control :)");
+            Thread.sleep(Math.abs(((timePacketReceived - timePacketSent)) + settings.getDelay()));
 
             byte[] sendData = Converter.toBytes(packet);
 

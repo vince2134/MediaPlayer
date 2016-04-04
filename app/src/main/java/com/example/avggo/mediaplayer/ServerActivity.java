@@ -371,18 +371,13 @@ public class ServerActivity extends AppCompatActivity {
                                 prevSeqNo = receivedPacket.getSeqNo();
 
                         if (acksInLine.get(0).getPacketNo() != -1) {
-                            System.out.print("Acumulated Acks: ");
-                            for (Ack a : acksInLine) {
                                 if (settings.getVerbosity() == 2) {
-                                    System.out.println("Sent ack with sequence number: " + a.getPacketNo());
+                                    System.out.println("Sent ack with sequence number: " + acksInLine.get(0).getPacketNo());
                                 }
                                 else if (settings.getVerbosity() == 3) {
-                                    System.out.println("[" + new Date().toString() + "] Sent ack with sequence number: " + a.getPacketNo());
+                                    System.out.println("[" + new Date().toString() + "] Sent ack with sequence number: " + acksInLine.get(0).getPacketNo());
                                 }
-                            }
-                            System.out.println("");
                         }
-                        //}
                     }
                     else if (command.contains(CONNECT)) {
                         Animation in = AnimationUtils.loadAnimation(getBaseContext(), android.R.anim.fade_in);
