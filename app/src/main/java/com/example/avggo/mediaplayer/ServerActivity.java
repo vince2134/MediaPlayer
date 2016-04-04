@@ -317,10 +317,21 @@ public class ServerActivity extends AppCompatActivity {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-
-                        //if (settings.getRandomLossProbability()) {
-                            //System.out.println("Packet lost!");
+                        
                             Packet receivedPacket = (Packet) Converter.toObject(receiveFragment.getData());
+
+                        if (settings.getRandomLossProbability()) {
+                            if (settings.getVerbosity() == 1 || settings.getVerbosity() == 2)
+                                System.out.println ("Dropped pack with sequence number: " + receivedPacket.getSeqNo());
+                            else if (settings.getVerbosity() == 3)
+                                System.out.println ("[" + new Date().toString() + "] Dropped packet with sequence number: " + receivedPacket.getSeqNo());
+
+                            byte[] sendAck = Converter.toBytes(acksInLine.get(0));
+                            ackPacket = new DatagramPacket(sendAck, sendAck.length, receiveFragment.getAddress(), receiveFragment.getPort());
+                            serverSocket.send(ackPacket);
+
+                            continue;
+                        }
 
                             if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo())) {
                                 acksInLine.remove(0);
