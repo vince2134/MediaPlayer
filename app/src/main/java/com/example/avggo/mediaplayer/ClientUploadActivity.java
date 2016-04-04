@@ -280,6 +280,8 @@ public class ClientUploadActivity extends AppCompatActivity {
 
         boolean sentTimedOut = false;
 
+        Timer timer;
+
         SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
 
         public UploadTask (Context c, InetAddress ipAddr, int port, String fPath) throws SocketException {
@@ -289,6 +291,8 @@ public class ClientUploadActivity extends AppCompatActivity {
             this.c = c;
 
             clientSocket = new DatagramSocket();
+
+            timer = new Timer();
         }
 
         private void sendPacket (Packet packet) throws IOException, InterruptedException {
@@ -302,6 +306,8 @@ public class ClientUploadActivity extends AppCompatActivity {
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, dstAddress, dstPort);
 
             clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+
+            clientSocket.setSoTimeout(settings.getTimeout());
             clientSocket.send(sendPacket); // send bytes to Server
 
             System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + packet.getSeqNo());
@@ -360,9 +366,11 @@ public class ClientUploadActivity extends AppCompatActivity {
                             System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + p.getSeqNo());
 
                         if (!ackCollection.isEmpty()) {
+                            timer.cancel();
+
                             final Packet pk = p;
-                            Timer t = new Timer();
-                            t.schedule(new TimerTask() {
+                            timer = new Timer();
+                            timer.schedule(new TimerTask() {
                                 @Override
                                 public void run() {
                                     try {

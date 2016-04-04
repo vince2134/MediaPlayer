@@ -326,11 +326,9 @@ public class ServerActivity extends AppCompatActivity {
                             else if (settings.getVerbosity() == 3)
                                 System.out.println ("[" + new Date().toString() + "] Dropped packet with sequence number: " + receivedPacket.getSeqNo());
 
-                            byte[] sendAck = Converter.toBytes(acksInLine.get(0));
+                            byte[] sendAck = Converter.toBytes(new Ack(-1));
                             ackPacket = new DatagramPacket(sendAck, sendAck.length, receiveFragment.getAddress(), receiveFragment.getPort());
                             serverSocket.send(ackPacket);
-
-                            continue;
                         }
 
                         if (receivedPacket.getSeqNo() == (acksInLine.get(0).getPacketNo())) {
@@ -376,10 +374,10 @@ public class ServerActivity extends AppCompatActivity {
                             System.out.print("Acumulated Acks: ");
                             for (Ack a : acksInLine) {
                                 if (settings.getVerbosity() == 2) {
-                                    System.out.println("Received ack with sequence number: " + a.getPacketNo());
+                                    System.out.println("Sent ack with sequence number: " + a.getPacketNo());
                                 }
                                 else if (settings.getVerbosity() == 3) {
-                                    System.out.println("[" + new Date().toString() + "] Received ack with sequence number: " + a.getPacketNo());
+                                    System.out.println("[" + new Date().toString() + "] Sent ack with sequence number: " + a.getPacketNo());
                                 }
                             }
                             System.out.println("");
@@ -559,7 +557,9 @@ public class ServerActivity extends AppCompatActivity {
 
         boolean sentTimedOut = false;
 
-        SingletonClientSimulation settings = SingletonClientSimulation.getInstance();
+        Timer timer;
+
+        SingletonServerSimulation settings = SingletonServerSimulation.getInstance();
 
         public UploadTask (Context c, InetAddress ipAddr, int port, String fPath) throws SocketException {
             dstAddress = ipAddr;
@@ -568,6 +568,7 @@ public class ServerActivity extends AppCompatActivity {
             this.c = c;
 
             clientSocket = new DatagramSocket();
+            timer = new Timer();
         }
 
         private void sendPacket (Packet packet) throws IOException, InterruptedException {
@@ -581,6 +582,8 @@ public class ServerActivity extends AppCompatActivity {
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, dstAddress, dstPort);
 
             clientSocket.send(commandPacket); // command Server to Receive incoming bytes
+
+            clientSocket.setSoTimeout(settings.getTimeout());
             clientSocket.send(sendPacket); // send bytes to Server
 
             System.out.println("[" + new Date().toString() + "] Client sent packet with sequence number: " + packet.getSeqNo());
@@ -638,9 +641,11 @@ public class ServerActivity extends AppCompatActivity {
                             System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + p.getSeqNo());
 
                         if (!ackCollection.isEmpty()) {
+                            timer.cancel();
+
                             final Packet pk = p;
-                            Timer t = new Timer();
-                            t.schedule(new TimerTask() {
+                            timer = new Timer();
+                            timer.schedule(new TimerTask() {
                                 @Override
                                 public void run() {
                                     try {
