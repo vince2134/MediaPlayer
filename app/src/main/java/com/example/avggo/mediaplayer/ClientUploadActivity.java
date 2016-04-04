@@ -365,6 +365,7 @@ public class ClientUploadActivity extends AppCompatActivity {
                         else if (settings.getVerbosity() == 3)
                             System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + p.getSeqNo());
 
+                        /*
                         if (!ackCollection.isEmpty()) {
                             timer.cancel();
 
@@ -384,6 +385,7 @@ public class ClientUploadActivity extends AppCompatActivity {
                                 }
                             }, settings.getTimeout());
                         }
+                        */
 
                         continue;
                     }

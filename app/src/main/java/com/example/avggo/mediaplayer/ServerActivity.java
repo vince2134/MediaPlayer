@@ -640,7 +640,7 @@ public class ServerActivity extends AppCompatActivity {
                         else if (settings.getVerbosity() == 3)
                             System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + p.getSeqNo());
 
-                        if (!ackCollection.isEmpty()) {
+                        /*if (!ackCollection.isEmpty()) {
                             timer.cancel();
 
                             final Packet pk = p;
@@ -659,6 +659,7 @@ public class ServerActivity extends AppCompatActivity {
                                 }
                             }, settings.getTimeout());
                         }
+                        */
 
                         continue;
                     }
