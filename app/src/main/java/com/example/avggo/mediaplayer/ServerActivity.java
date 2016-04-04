@@ -2,7 +2,6 @@ package com.example.avggo.mediaplayer;
 
 import android.annotation.TargetApi;
 import android.app.ActionBar.LayoutParams;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
@@ -14,7 +13,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -32,7 +30,6 @@ import com.example.avggo.mediaplayer.fastretransmit.Packet;
 import com.example.avggo.mediaplayer.singleton.SingletonClientSimulation;
 import com.example.avggo.mediaplayer.singleton.SingletonServerSimulation;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -337,7 +334,7 @@ public class ServerActivity extends AppCompatActivity {
                                             else
                                                 acksInLine.add(new Ack(i));
 
-                                            if (settings.getVerbosity() == 1 || settings.getVerbosity() == 2)
+                                            if (settings.getVerbosity() == 2)
                                                 System.out.println("Lost packet with sequence number: " + i);
                                             if (settings.getVerbosity() == 3)
                                                 System.out.println("[" + new Date().toString() + "] Lost packet with sequence number: " + i);
@@ -367,7 +364,12 @@ public class ServerActivity extends AppCompatActivity {
                         if (acksInLine.get(0).getPacketNo() != -1) {
                             System.out.print("Acumulated Acks: ");
                             for (Ack a : acksInLine) {
-                                System.out.print(a.getPacketNo() + ", ");
+                                if (settings.getVerbosity() == 2) {
+                                    System.out.println("Received ack with sequence number: " + a.getPacketNo());
+                                }
+                                else if (settings.getVerbosity() == 3) {
+                                    System.out.println("[" + new Date().toString() + "] Received ack with sequence number: " + a.getPacketNo());
+                                }
                             }
                             System.out.println("");
                         }
